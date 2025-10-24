@@ -34,10 +34,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
     if (adminUsersMatch) setOpenUsers(true);
   }, [adminConfirmationMatch, adminDepartmentsMatch, adminUsersMatch]);
 
-  const providerRootActive = pathname === "/provider";
+  const providerRootActive = pathname === "/provider/appointments";
 
   const goHome = () => {
-    const homePath = isAdmin ? "/admin" : isProvider ? "/provider" : "/";
+    const homePath = isAdmin
+      ? "/admin"
+      : isProvider
+      ? "/provider/appointments"
+      : "/";
     navigate(homePath);
   };
 
@@ -62,6 +66,39 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </li>
         </ul>
         <ul className="navbar-nav ml-auto">
+          {/* Settings for Provider */}
+          {isProvider && (
+            <li className="nav-item">
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/provider");
+                }}
+                title="Parametreler"
+              >
+                <i className="fas fa-cog" />
+              </a>
+            </li>
+          )}
+
+          {!isAdmin && !isProvider && (
+            <li className="nav-item">
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/profile");
+                }}
+                title="Profilim"
+              >
+                <i className="fas fa-user" />
+              </a>
+            </li>
+          )}
+
           <li className="nav-item">
             <button
               className="btn btn-outline-secondary border"
@@ -122,18 +159,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       <p>Randevularım</p>
                     </NavLink>
                   </li>
-                  <li className="nav-item">
-                    <NavLink
-                      to="/profile"
-                      end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
-                      }
-                    >
-                      <i className="nav-icon fas fa-user" />
-                      <p>Profilim</p>
-                    </NavLink>
-                  </li>
                 </>
               )}
 
@@ -141,7 +166,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <>
                   <li className="nav-header">Admin</li>
 
-                  {/* Dashboard */}
                   <li className="nav-item">
                     <NavLink
                       to="/admin"
@@ -317,24 +341,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   <li className="nav-header">İlgili</li>
                   <li className="nav-item">
                     <NavLink
-                      to="/provider"
+                      to="/provider/appointments"
                       end
                       className={({ isActive }) =>
                         `nav-link${
                           isActive || providerRootActive ? " active" : ""
                         }`
-                      }
-                    >
-                      <i className="nav-icon fas fa-sliders-h" />
-                      <p>Parametreler</p>
-                    </NavLink>
-                  </li>
-                  <li className="nav-item">
-                    <NavLink
-                      to="/provider/appointments"
-                      end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
                       }
                     >
                       <i className="nav-icon fas fa-calendar-day" />

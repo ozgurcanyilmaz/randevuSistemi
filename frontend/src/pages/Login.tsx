@@ -28,7 +28,7 @@ export default function Login() {
       await login(email, password);
       const roles = getRoles();
       if (roles.includes("Admin")) return navigate("/admin");
-      if (roles.includes("ServiceProvider")) return navigate("/provider");
+      if (roles.includes("ServiceProvider")) return navigate("/provider/appointments");
       return navigate("/");
     } catch (err: any) {
       const msg =

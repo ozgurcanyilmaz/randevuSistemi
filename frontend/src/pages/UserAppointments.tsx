@@ -8,6 +8,7 @@ type Appt = {
   endTime: string;
   branchName: string;
   providerId: number;
+  providerNotes?: string;
 };
 
 type Tab = "upcoming" | "past" | "all";
@@ -93,8 +94,7 @@ export default function UserAppointments() {
             Randevularım
           </h1>
           <p style={{ color: "#64748b" }}>
-            Yaklaşan randevuları takip edin, geçmiş ziyaretlerinizi
-            görüntüleyin.
+            Yaklaşan randevuları takip edin, geçmiş ziyaretlerinizi ve ilgili notlarını görüntüleyin.
           </p>
         </div>
 
@@ -225,47 +225,109 @@ export default function UserAppointments() {
                 : "Herhangi bir randevu bulunamadı."}
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="table table-sm" style={{ marginBottom: 0 }}>
-                <thead>
-                  <tr>
-                    <th style={{ whiteSpace: "nowrap" }}>Tarih</th>
-                    <th style={{ whiteSpace: "nowrap" }}>Saat</th>
-                    <th style={{ whiteSpace: "nowrap" }}>Şube</th>
-                    <th style={{ whiteSpace: "nowrap" }}>Durum</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataForTab.map((a) => {
-                    const isPast = toDate(a).getTime() < now.getTime();
-                    return (
-                      <tr key={a.id}>
-                        <td>{formatDate(a.date)}</td>
-                        <td>
-                          {formatTime(a.startTime)} – {formatTime(a.endTime)}
-                        </td>
-                        <td>{a.branchName}</td>
-                        <td>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              padding: "4px 10px",
-                              borderRadius: "9999px",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              background: isPast ? "#e5e7eb" : "#dcfce7",
-                              color: isPast ? "#374151" : "#166534",
-                            }}
-                          >
-                            {isPast ? "Geçti" : "Yaklaşan"}
+            <div style={{ display: "grid", gap: 16 }}>
+              {dataForTab.map((a) => {
+                const isPast = toDate(a).getTime() < now.getTime();
+                return (
+                  <div
+                    key={a.id}
+                    style={{
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 12,
+                      padding: 20,
+                      background: "#f8fafc",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.borderColor = "#cbd5e1";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#f8fafc";
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 600,
+                            color: "#1e293b",
+                            marginBottom: 8,
+                          }}
+                        >
+                          🏪 {a.branchName}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 14,
+                            color: "#64748b",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
+                          }}
+                        >
+                          <span>📅 {formatDate(a.date)}</span>
+                          <span>
+                            ⏰ {formatTime(a.startTime)} – {formatTime(a.endTime)}
                           </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "6px 14px",
+                          borderRadius: "9999px",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          background: isPast ? "#e5e7eb" : "#dcfce7",
+                          color: isPast ? "#374151" : "#166534",
+                        }}
+                      >
+                        {isPast ? "📋 Geçti" : "⏳ Yaklaşan"}
+                      </span>
+                    </div>
+
+                    {a.providerNotes && (
+                      <div
+                        style={{
+                          background: "#dcfce7",
+                          border: "1px solid #bbf7d0",
+                          borderRadius: 8,
+                          padding: 14,
+                          marginTop: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: "#166534",
+                            marginBottom: 6,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          💬 İlgili Notu
+                        </div>
+                        <div style={{ fontSize: 14, color: "#166534" }}>
+                          {a.providerNotes}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -276,12 +338,13 @@ export default function UserAppointments() {
             background: "#eff6ff",
             border: "1px solid #bfdbfe",
             color: "#1e40af",
-            padding: "10px 12px",
+            padding: "12px 16px",
             borderRadius: 8,
             fontSize: 14,
+            lineHeight: 1.5,
           }}
         >
-          Randevunuzun saatinde şubede hazır bulunmayı unutmayın.
+          💡 <strong>Hatırlatma:</strong> Randevunuzun saatinde şubede hazır bulunmayı unutmayın.
           Değişiklik/iptal için şube ile iletişime geçebilirsiniz.
         </div>
       </div>

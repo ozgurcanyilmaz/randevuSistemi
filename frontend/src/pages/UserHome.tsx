@@ -4,7 +4,7 @@ import { api } from "../services/api";
 type Department = {
   id: number;
   name: string;
-  branches: { id: number; name: string }[];
+  branches: { id: number; name: string; departmentId: number }[];
 };
 type Provider = {
   id: number;
@@ -25,9 +25,12 @@ export default function UserHome() {
   const [loadingDeps, setLoadingDeps] = useState(true);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingBusy, setBookingBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+
+  // Confirmation modal
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     loadDepartments();
@@ -50,9 +53,7 @@ export default function UserHome() {
     setLoadingProviders(true);
     setError(null);
     try {
-      const { data } = await api.get<Provider[]>(
-        `/user/branches/${id}/providers`
-      );
+      const { data } = await api.get<Provider[]>(`/user/branches/${id}/providers`);
       setProviders(data);
     } catch {
       setError("İlgili listesi yüklenemedi.");
@@ -77,9 +78,6 @@ export default function UserHome() {
         end: x.end || x.End,
       }));
       setSlots(mapped);
-      setInfo(
-        mapped.length === 0 ? "Seçilen tarihte uygun saat bulunamadı." : null
-      );
     } catch {
       setError("Uygun saatler yüklenemedi.");
     } finally {
@@ -87,16 +85,25 @@ export default function UserHome() {
     }
   }
 
-  async function book(start: string, end: string) {
+  async function confirmBooking() {
+    if (!selectedSlot) return;
     setError(null);
-    setInfo(null);
-    setBookingBusy(`${start}-${end}`);
+    setBooking(true);
     try {
-      await api.post("/user/appointments", { providerId, date, start, end });
-      setInfo("Randevu oluşturuldu!");
+      await api.post("/user/appointments", {
+        providerId,
+        date,
+        start: selectedSlot.start,
+        end: selectedSlot.end,
+      });
+      setShowConfirm(false);
+      setSelectedSlot(null);
+      alert("Randevu başarıyla oluşturuldu!");
       if (providerId && date) await loadSlots(Number(providerId), date);
     } catch (e: any) {
       const msg = e?.response?.data ?? "Randevu alınamadı";
+      setShowConfirm(false);
+      setSelectedSlot(null);
       if (
         typeof msg === "string" &&
         msg.includes("Profilinizdeki gerekli bilgileri tamamlayın")
@@ -112,7 +119,7 @@ export default function UserHome() {
         setError(typeof msg === "string" ? msg : "Randevu alınamadı.");
       }
     } finally {
-      setBookingBusy(null);
+      setBooking(false);
     }
   }
 
@@ -130,6 +137,11 @@ export default function UserHome() {
         (p) => p.id === (typeof providerId === "number" ? providerId : -1)
       ),
     [providers, providerId]
+  );
+
+  const selectedBranch = useMemo(
+    () => allBranches.find((b) => b.id === branchId),
+    [allBranches, branchId]
   );
 
   const todayStr = useMemo(() => {
@@ -188,20 +200,6 @@ export default function UserHome() {
               {error}
             </div>
           )}
-          {info && (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "10px 12px",
-                background: "#ecfeff",
-                border: "1px solid #a5f3fc",
-                color: "#155e75",
-                borderRadius: 8,
-              }}
-            >
-              {info}
-            </div>
-          )}
 
           <div
             style={{
@@ -211,7 +209,7 @@ export default function UserHome() {
             }}
           >
             <div>
-              <label className="form-label">Departman/Şube</label>
+              <label className="form-label">🏢 Departman/Şube</label>
               <select
                 className="form-control select2"
                 value={branchId}
@@ -245,7 +243,7 @@ export default function UserHome() {
             </div>
 
             <div>
-              <label className="form-label">İlgili</label>
+              <label className="form-label">👤 İlgili</label>
               <select
                 className="form-control select2"
                 value={providerId}
@@ -271,13 +269,13 @@ export default function UserHome() {
               </select>
               {!!selectedProvider && (
                 <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
-                  Seans süresi: {selectedProvider.sessionDurationMinutes} dk
+                  ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes} dk
                 </div>
               )}
             </div>
 
             <div>
-              <label className="form-label">Tarih</label>
+              <label className="form-label">📅 Tarih</label>
               <input
                 className="form-control"
                 type="date"
@@ -309,21 +307,21 @@ export default function UserHome() {
         >
           <h2
             style={{
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 600,
               color: "#1e293b",
               margin: 0,
               marginBottom: 16,
             }}
           >
-            Uygun Saatler
+            ⏰ Uygun Saatler
           </h2>
 
           {(!branchId || !providerId || !date) && (
             <div
               style={{
                 textAlign: "center",
-                padding: "32px 20px",
+                padding: "48px 20px",
                 color: "#94a3b8",
                 background: "#f8fafc",
                 borderRadius: 8,
@@ -357,41 +355,319 @@ export default function UserHome() {
               <div
                 style={{
                   textAlign: "center",
-                  padding: "32px 20px",
+                  padding: "48px 20px",
                   color: "#94a3b8",
                   background: "#f8fafc",
                   borderRadius: 8,
                   border: "1px dashed #cbd5e1",
                 }}
               >
-                Uygun saat bulunamadı.
+                Seçilen tarihte uygun saat bulunamadı. Lütfen başka bir tarih deneyin.
               </div>
             )}
 
-          <div className="row mt-1">
-            {slots.map((s, i) => {
-              const busy = bookingBusy === `${s.start}-${s.end}`;
-              return (
-                <div className="col-auto mb-2" key={`${s.start}-${s.end}-${i}`}>
-                  <button
-                    className="btn btn-outline-primary"
-                    onClick={() => book(s.start, s.end)}
-                    disabled={!providerId || !date || !!bookingBusy}
-                    style={{ whiteSpace: "nowrap" }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.className = "btn btn-primary")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.className = "btn btn-outline-primary")
-                    }
-                  >
-                    {busy ? "Oluşturuluyor..." : `${s.start} - ${s.end}`}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          {slots.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {slots.map((s, i) => (
+                <button
+                  key={`${s.start}-${s.end}-${i}`}
+                  onClick={() => {
+                    setSelectedSlot(s);
+                    setShowConfirm(true);
+                  }}
+                  style={{
+                    padding: "16px 20px",
+                    border: "2px solid #bfdbfe",
+                    background: "white",
+                    color: "#1e40af",
+                    borderRadius: 12,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    transition: "all 0.2s",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = "#eff6ff";
+                    e.currentTarget.style.borderColor = "#60a5fa";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 99, 235, 0.2)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = "white";
+                    e.currentTarget.style.borderColor = "#bfdbfe";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: "#64748b" }}>⏰</span>
+                  <span>{s.start}</span>
+                  <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
+                  <span>{s.end}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Confirmation Modal */}
+        {showConfirm && selectedSlot && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => !booking && setShowConfirm(false)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 16,
+                padding: 32,
+                maxWidth: 500,
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    background: "#eff6ff",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                    fontSize: 32,
+                  }}
+                >
+                  📅
+                </div>
+                <h2
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: "#1e293b",
+                    marginBottom: 8,
+                  }}
+                >
+                  Randevu Onayı
+                </h2>
+                <p style={{ color: "#64748b", fontSize: 14 }}>
+                  Aşağıdaki bilgileri kontrol edin ve onaylayın.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: "#f8fafc",
+                  borderRadius: 12,
+                  padding: 20,
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 16,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#64748b",
+                        marginBottom: 4,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Departman / Şube
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: "#1e293b",
+                      }}
+                    >
+                      {selectedBranch?.depName} - {selectedBranch?.name}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#64748b",
+                        marginBottom: 4,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      İlgili
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: "#1e293b",
+                      }}
+                    >
+                      {selectedProvider?.fullName || selectedProvider?.email}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 16,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#64748b",
+                          marginBottom: 4,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Tarih
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                        }}
+                      >
+                        {new Date(date).toLocaleDateString("tr-TR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#64748b",
+                          marginBottom: 4,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Saat
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                        }}
+                      >
+                        {selectedSlot.start} - {selectedSlot.end}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 24,
+                  fontSize: 13,
+                  color: "#1e40af",
+                  lineHeight: 1.5,
+                }}
+              >
+                💡 <strong>Not:</strong> Randevunuza zamanında gelmeyi unutmayın.
+                Değişiklik için şube ile iletişime geçebilirsiniz.
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    color: "#64748b",
+                    fontWeight: 500,
+                    padding: "12px 24px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 15,
+                    transition: "all 0.2s",
+                  }}
+                  onClick={() => !booking && setShowConfirm(false)}
+                  disabled={booking}
+                  onMouseOver={(e) => {
+                    if (!booking) e.currentTarget.style.background = "#f1f5f9";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  İptal
+                </button>
+                <button
+                  style={{
+                    flex: 1,
+                    background: "#2563eb",
+                    color: "white",
+                    fontWeight: 600,
+                    padding: "12px 24px",
+                    border: "none",
+                    borderRadius: 8,
+                    cursor: booking ? "not-allowed" : "pointer",
+                    fontSize: 15,
+                    transition: "all 0.2s",
+                  }}
+                  onClick={confirmBooking}
+                  disabled={booking}
+                  onMouseOver={(e) => {
+                    if (!booking) e.currentTarget.style.background = "#1d4ed8";
+                  }}
+                  onMouseOut={(e) => {
+                    if (!booking) e.currentTarget.style.background = "#2563eb";
+                  }}
+                >
+                  {booking ? "Oluşturuluyor..." : "✓ Randevuyu Onayla"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

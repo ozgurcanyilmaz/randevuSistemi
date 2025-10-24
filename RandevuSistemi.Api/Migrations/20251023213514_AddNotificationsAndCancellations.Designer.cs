@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RandevuSistemi.Api.Data;
@@ -11,9 +12,11 @@ using RandevuSistemi.Api.Data;
 namespace RandevuSistemi.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251023213514_AddNotificationsAndCancellations")]
+    partial class AddNotificationsAndCancellations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -244,6 +247,15 @@ namespace RandevuSistemi.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CancelledBy")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset?>("CheckedInAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -252,6 +264,9 @@ namespace RandevuSistemi.Api.Migrations
 
                     b.Property<TimeOnly>("EndTime")
                         .HasColumnType("time without time zone");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
@@ -344,6 +359,42 @@ namespace RandevuSistemi.Api.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("RandevuSistemi.Api.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RelatedAppointmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("RandevuSistemi.Api.Models.ServiceProviderProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -369,6 +420,36 @@ namespace RandevuSistemi.Api.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ServiceProviderProfiles");
+                });
+
+            modelBuilder.Entity("RandevuSistemi.Api.Models.WalkInAppointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ServiceProviderProfileId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceProviderProfileId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WalkInAppointments");
                 });
 
             modelBuilder.Entity("RandevuSistemi.Api.Models.WorkingHours", b =>
@@ -490,6 +571,17 @@ namespace RandevuSistemi.Api.Migrations
                     b.Navigation("ServiceProvider");
                 });
 
+            modelBuilder.Entity("RandevuSistemi.Api.Models.Notification", b =>
+                {
+                    b.HasOne("RandevuSistemi.Api.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("RandevuSistemi.Api.Models.ServiceProviderProfile", b =>
                 {
                     b.HasOne("RandevuSistemi.Api.Models.Branch", "Branch")
@@ -505,6 +597,25 @@ namespace RandevuSistemi.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RandevuSistemi.Api.Models.WalkInAppointment", b =>
+                {
+                    b.HasOne("RandevuSistemi.Api.Models.ServiceProviderProfile", "ServiceProvider")
+                        .WithMany()
+                        .HasForeignKey("ServiceProviderProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RandevuSistemi.Api.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ServiceProvider");
 
                     b.Navigation("User");
                 });

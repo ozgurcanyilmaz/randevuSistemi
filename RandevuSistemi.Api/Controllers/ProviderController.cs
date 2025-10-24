@@ -87,7 +87,7 @@ namespace RandevuSistemi.Api.Controllers
             var appts = await _db.Appointments
                 .Where(a => a.ServiceProviderProfileId == profile.Id)
                 .OrderByDescending(a => a.Date).ThenBy(a => a.StartTime)
-                .Select(a => new { a.Id, a.Date, a.StartTime, a.EndTime, a.UserId, FullName = a.User.FullName, a.CheckedInAt })
+                .Select(a => new { a.Id, a.Date, a.StartTime, a.EndTime, a.UserId, FullName = a.User.FullName, a.CheckedInAt, a.Notes, a.ProviderNotes, a.ServiceProviderProfileId })
                 .ToListAsync();
             return Ok(appts);
         }
@@ -106,7 +106,57 @@ namespace RandevuSistemi.Api.Controllers
                 .ToListAsync();
             return Ok(items);
         }
+
+        public record AddProviderNoteRequest(int AppointmentId, string ProviderNotes);
+        [HttpPost("appointments/add-note")]
+        public async Task<IActionResult> AddProviderNote([FromBody] AddProviderNoteRequest req)
+        {
+            var profile = await GetMyProfile();
+            if (profile == null) return NotFound("Provider profile not found");
+
+            var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == req.AppointmentId && a.ServiceProviderProfileId == profile.Id);
+            if (appt == null) return NotFound("Appointment not found");
+
+            appt.ProviderNotes = req.ProviderNotes;
+            await _db.SaveChangesAsync();
+            return Ok(new { appt.Id, appt.ProviderNotes });
+        }
+
+        public record CreateFollowUpRequest(string UserId, DateOnly Date, TimeOnly Start, TimeOnly End, string? Notes);
+        [HttpPost("appointments/create-followup")]
+        public async Task<IActionResult> CreateFollowUp([FromBody] CreateFollowUpRequest req)
+        {
+            var profile = await GetMyProfile();
+            if (profile == null) return NotFound("Provider profile not found");
+
+            var expected = TimeSpan.FromMinutes(profile.SessionDurationMinutes);
+            var actual = req.End.ToTimeSpan() - req.Start.ToTimeSpan();
+            if (actual != expected) return BadRequest($"Invalid session length. Expected {profile.SessionDurationMinutes} minutes.");
+
+            var workForDay = await _db.WorkingHours.Where(w => w.ServiceProviderProfileId == profile.Id && w.DayOfWeek == req.Date.DayOfWeek).ToListAsync();
+            if (!workForDay.Any()) return BadRequest("Provider has no working hours on selected day.");
+            bool insideWorking = workForDay.Any(w => req.Start >= w.StartTime && req.End <= w.EndTime);
+            if (!insideWorking) return BadRequest("Selected time is outside working hours.");
+            var breaksForDay = await _db.BreakPeriods.Where(b => b.ServiceProviderProfileId == profile.Id && b.DayOfWeek == req.Date.DayOfWeek).ToListAsync();
+            bool overlapsBreak = breaksForDay.Any(b => !(req.End <= b.StartTime || req.Start >= b.EndTime));
+            if (overlapsBreak) return BadRequest("Selected time overlaps a break period.");
+
+            var existingAppts = await _db.Appointments.Where(a => a.ServiceProviderProfileId == profile.Id && a.Date == req.Date).ToListAsync();
+            bool conflict = existingAppts.Any(a => !(req.End <= a.StartTime || req.Start >= a.EndTime));
+            if (conflict) return Conflict("Slot already taken");
+
+            var appt = new Appointment
+            {
+                ServiceProviderProfileId = profile.Id,
+                UserId = req.UserId,
+                Date = req.Date,
+                StartTime = req.Start,
+                EndTime = req.End,
+                Notes = req.Notes
+            };
+            _db.Appointments.Add(appt);
+            await _db.SaveChangesAsync();
+            return Ok(appt);
+        }
     }
 }
-
-

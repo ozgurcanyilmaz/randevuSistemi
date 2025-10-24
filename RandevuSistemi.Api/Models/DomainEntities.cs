@@ -66,10 +66,8 @@ namespace RandevuSistemi.Api.Models
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
         public string? Notes { get; set; }
+        public string? ProviderNotes { get; set; }
 
         public DateTimeOffset? CheckedInAt { get; set; }
     }
 }
-
-
-

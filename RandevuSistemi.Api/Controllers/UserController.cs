@@ -238,7 +238,8 @@ namespace RandevuSistemi.Api.Controllers
                     a.StartTime,
                     a.EndTime,
                     ProviderId = a.ServiceProviderProfileId,
-                    BranchName = a.ServiceProvider.Branch.Name
+                    BranchName = a.ServiceProvider.Branch.Name,
+                    a.ProviderNotes
                 })
                 .ToListAsync();
             return Ok(appts);

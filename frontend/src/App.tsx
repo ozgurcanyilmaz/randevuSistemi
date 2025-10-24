@@ -23,7 +23,6 @@ function RoleRoute({ children, role }: { children: JSX.Element; role: string }) 
   return roles.includes(role) ? children : <Navigate to="/" replace />
 }
 
-
 export default function App() {
   return (
     <BrowserRouter>
