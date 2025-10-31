@@ -10,9 +10,10 @@ import Roles from './pages/admin/Roles'
 import UserAppointments from './pages/UserAppointments'
 import ProviderAppointments from './pages/ProviderAppointments'
 import ProviderWaiting from './pages/ProviderWaiting'
-import AdminConfirmation from './pages/admin/Confirmation'
 import AppLayout from './components/AppLayout'
 import ProfilePage from './pages/Profile'
+import OperatorHome from './pages/operator/OperatorHome'
+import OperatorWalkIn from './pages/operator/OperatorWalkIn'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
@@ -32,13 +33,20 @@ export default function App() {
         <Route path="/" element={<PrivateRoute><AppLayout><UserHome /></AppLayout></PrivateRoute>} />
         <Route path="/my-appointments" element={<PrivateRoute><AppLayout><UserAppointments /></AppLayout></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><AppLayout><ProfilePage /></AppLayout></PrivateRoute>} />
+        
+        {/* Admin Routes */}
         <Route path="/admin" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Admin /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/departments" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Departments /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/departments/branches" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Departments /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/roles" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/roles/assign-provider" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
-        <Route path="/admin/confirmation" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><AdminConfirmation /></AppLayout></RoleRoute></PrivateRoute>} />
-        <Route path="/admin/confirmation/create" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><AdminConfirmation /></AppLayout></RoleRoute></PrivateRoute>} />
+        
+        {/* Operator Routes */}
+        <Route path="/operator" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/operator/appointments" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/operator/walk-in" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorWalkIn /></AppLayout></RoleRoute></PrivateRoute>} />
+        
+        {/* Provider Routes */}
         <Route path="/provider" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><Provider /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/provider/appointments" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><ProviderAppointments /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/provider/waiting" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><ProviderWaiting /></AppLayout></RoleRoute></PrivateRoute>} />

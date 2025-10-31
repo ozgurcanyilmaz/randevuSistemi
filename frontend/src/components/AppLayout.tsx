@@ -6,19 +6,15 @@ import { useEffect, useMemo, useState } from "react";
 export default function AppLayout({ children }: PropsWithChildren) {
   const roles = getRoles();
   const isAdmin = roles.includes("Admin");
+  const isOperator = roles.includes("Operator");
   const isProvider = roles.includes("ServiceProvider");
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const [openConfirm, setOpenConfirm] = useState(false);
   const [openDeps, setOpenDeps] = useState(false);
   const [openUsers, setOpenUsers] = useState(false);
+  const [openOperatorAppt, setOpenOperatorAppt] = useState(false);
 
-  const adminRootActive = pathname === "/admin";
-  const adminConfirmationMatch = useMemo(
-    () => pathname.startsWith("/admin/confirmation"),
-    [pathname]
-  );
   const adminDepartmentsMatch = useMemo(
     () => pathname.startsWith("/admin/departments"),
     [pathname]
@@ -27,18 +23,26 @@ export default function AppLayout({ children }: PropsWithChildren) {
     () => pathname.startsWith("/admin/roles"),
     [pathname]
   );
+  const operatorApptMatch = useMemo(
+    () => pathname.startsWith("/operator"),
+    [pathname]
+  );
 
   useEffect(() => {
-    if (adminConfirmationMatch) setOpenConfirm(true);
     if (adminDepartmentsMatch) setOpenDeps(true);
     if (adminUsersMatch) setOpenUsers(true);
-  }, [adminConfirmationMatch, adminDepartmentsMatch, adminUsersMatch]);
+    if (operatorApptMatch) setOpenOperatorAppt(true);
+  }, [adminDepartmentsMatch, adminUsersMatch, operatorApptMatch]);
 
+  const adminRootActive = pathname === "/admin";
   const providerRootActive = pathname === "/provider/appointments";
+  const operatorRootActive = pathname === "/operator" || pathname === "/operator/appointments";
 
   const goHome = () => {
     const homePath = isAdmin
       ? "/admin"
+      : isOperator
+      ? "/operator"
       : isProvider
       ? "/provider/appointments"
       : "/";
@@ -66,7 +70,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </li>
         </ul>
         <ul className="navbar-nav ml-auto">
-          {/* Settings for Provider */}
           {isProvider && (
             <li className="nav-item">
               <a
@@ -83,7 +86,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </li>
           )}
 
-          {!isAdmin && !isProvider && (
+          {!isAdmin && !isProvider && !isOperator && (
             <li className="nav-item">
               <a
                 href="#"
@@ -133,7 +136,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               role="menu"
               data-accordion="false"
             >
-              {!isAdmin && !isProvider && (
+              {!isAdmin && !isProvider && !isOperator && (
                 <>
                   <li className="nav-item">
                     <NavLink
@@ -179,57 +182,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       <i className="nav-icon fas fa-tachometer-alt" />
                       <p>Yönetim Özeti</p>
                     </NavLink>
-                  </li>
-
-                  <li
-                    className={`nav-item has-treeview ${
-                      openConfirm ? "menu-open" : ""
-                    }`}
-                  >
-                    <a
-                      href="#"
-                      className={`nav-link ${openConfirm ? "active" : ""}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setOpenConfirm((v) => !v);
-                      }}
-                      aria-expanded={openConfirm}
-                    >
-                      <i className="nav-icon fas fa-check-circle" />
-                      <p>
-                        Randevu Yönetimi
-                        <i className="right fas fa-angle-left" />
-                      </p>
-                    </a>
-                    <ul
-                      className="nav nav-treeview"
-                      style={{ display: openConfirm ? "block" : "none" }}
-                    >
-                      <li className="nav-item">
-                        <NavLink
-                          to="/admin/confirmation"
-                          end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
-                        >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Randevu Onaylama</p>
-                        </NavLink>
-                      </li>
-                      <li className="nav-item">
-                        <NavLink
-                          to="/admin/confirmation/create"
-                          end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
-                        >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Yeni Randevu</p>
-                        </NavLink>
-                      </li>
-                    </ul>
                   </li>
 
                   <li
@@ -329,6 +281,63 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         >
                           <i className="far fa-circle nav-icon" />
                           <p>İlgiliyi Şubeye Atama</p>
+                        </NavLink>
+                      </li>
+                    </ul>
+                  </li>
+                </>
+              )}
+
+              {isOperator && (
+                <>
+                  <li className="nav-header">Operatör</li>
+
+                  <li
+                    className={`nav-item has-treeview ${
+                      openOperatorAppt ? "menu-open" : ""
+                    }`}
+                  >
+                    <a
+                      href="#"
+                      className={`nav-link ${openOperatorAppt ? "active" : ""}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setOpenOperatorAppt((v) => !v);
+                      }}
+                      aria-expanded={openOperatorAppt}
+                    >
+                      <i className="nav-icon fas fa-calendar-check" />
+                      <p>
+                        Randevu Yönetimi
+                        <i className="right fas fa-angle-left" />
+                      </p>
+                    </a>
+                    <ul
+                      className="nav nav-treeview"
+                      style={{ display: openOperatorAppt ? "block" : "none" }}
+                    >
+                      <li className="nav-item">
+                        <NavLink
+                          to="/operator/appointments"
+                          end
+                          className={({ isActive }) =>
+                            `nav-link${isActive ? " active" : ""}`
+                          }
+                        >
+                          <i className="far fa-circle nav-icon" />
+                          <p>Randevu Onaylama</p>
+                        </NavLink>
+                      </li>
+                      <li className="nav-item">
+                        <NavLink
+                          to="/operator/walk-in"
+                          end
+                          className={({ isActive }) =>
+                            `nav-link${isActive ? " active" : ""}`
+                          }
+                        >
+                          <i className="far fa-circle nav-icon" />
+                          <p>Walk-in Randevu</p>
                         </NavLink>
                       </li>
                     </ul>

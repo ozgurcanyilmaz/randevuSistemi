@@ -44,7 +44,7 @@ export default function Admin() {
   );
 
   const roleCounts = useMemo(() => {
-    const base = { Admin: 0, ServiceProvider: 0, User: 0, Other: 0 };
+    const base = { Admin: 0, Operator: 0, ServiceProvider: 0, User: 0, Other: 0 };
     for (const u of users) {
       if (!u.roles?.length) base.Other += 1;
       else {
@@ -220,6 +220,7 @@ export default function Admin() {
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <Badge label="Admin" value={roleCounts.Admin} tone="indigo" />
+              <Badge label="Operator" value={roleCounts.Operator} tone="indigo" />
               <Badge
                 label="ServiceProvider"
                 value={roleCounts.ServiceProvider}

@@ -47,7 +47,6 @@ namespace RandevuSistemi.Api.Controllers
             var u = await _db.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (u == null) return NotFound();
 
-            // Basic server-side validation
             if (!string.IsNullOrWhiteSpace(request.TcKimlikNo) && request.TcKimlikNo.Length != 11)
             {
                 return BadRequest("TC Kimlik No 11 haneli olmalıdır.");
@@ -73,7 +72,6 @@ namespace RandevuSistemi.Api.Controllers
                 return BadRequest("Telefon numarası en az 10 haneli olmalıdır.");
             }
 
-            // Require FullName to be set (either previously or via this request)
             var nextFullName = string.IsNullOrWhiteSpace(request.FullName) ? u.FullName : request.FullName;
             if (string.IsNullOrWhiteSpace(nextFullName))
             {
@@ -157,7 +155,6 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments")]
         public async Task<IActionResult> Book([FromBody] BookRequest req)
         {
-            // Disallow booking for past times on the same day
             var today = DateOnly.FromDateTime(DateTime.Now);
             if (req.Date == today)
             {
@@ -170,7 +167,6 @@ namespace RandevuSistemi.Api.Controllers
             var provider = await _db.ServiceProviderProfiles.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.Id == req.ProviderId);
             if (provider == null) return NotFound();
 
-            // Validate session duration
             var expected = TimeSpan.FromMinutes(provider.SessionDurationMinutes);
             var actual = req.End.ToTimeSpan() - req.Start.ToTimeSpan();
             if (actual != expected)
@@ -178,7 +174,6 @@ namespace RandevuSistemi.Api.Controllers
                 return BadRequest($"Invalid session length. Expected {provider.SessionDurationMinutes} minutes.");
             }
 
-            // Validate within working hours and not in breaks
             var workForDay = await _db.WorkingHours.Where(w => w.ServiceProviderProfileId == provider.Id && w.DayOfWeek == req.Date.DayOfWeek).ToListAsync();
             if (!workForDay.Any()) return BadRequest("Provider has no working hours on selected day.");
 
@@ -189,14 +184,12 @@ namespace RandevuSistemi.Api.Controllers
             bool overlapsBreak = breaksForDay.Any(b => !(req.End <= b.StartTime || req.Start >= b.EndTime));
             if (overlapsBreak) return BadRequest("Selected time overlaps a break period.");
 
-            // Validate not already taken
             bool conflict = provider.Appointments.Any(a => a.Date == req.Date && !(req.End <= a.StartTime || req.Start >= a.EndTime));
             if (conflict) return Conflict("Slot already taken");
 
             var userId = User.Identity?.IsAuthenticated == true ? User.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Value : null;
             if (userId == null) return Unauthorized();
 
-            // Enforce profile completeness before booking
             var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (user == null) return Unauthorized();
             bool profileComplete = !string.IsNullOrWhiteSpace(user.FullName)
