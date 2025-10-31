@@ -182,9 +182,10 @@ namespace RandevuSistemi.Api.Controllers
             var now = DateTimeOffset.UtcNow;
             var today = DateOnly.FromDateTime(DateTime.Now);
 
-            var currentMinutes = DateTime.Now.Minute;
+            var futureTime = DateTime.Now.AddMinutes(10);
+            var currentMinutes = futureTime.Minute;
             var roundedMinutes = (currentMinutes / 5) * 5;
-            var startTime = new TimeOnly(DateTime.Now.Hour, roundedMinutes);
+            var startTime = new TimeOnly(futureTime.Hour, roundedMinutes);
             var endTime = startTime.AddMinutes(provider.SessionDurationMinutes);
 
             var appt = new Appointment
@@ -211,11 +212,32 @@ namespace RandevuSistemi.Api.Controllers
         }
 
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers([FromQuery] string? q)
         {
-            var users = await _userManager.Users
+            var roleId = await _db.Roles
+                .Where(r => r.Name == "User")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (roleId == null) return Ok(Array.Empty<object>());
+
+            var usersQuery = _db.Users
+                .Where(u => _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == roleId));
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var ql = q.ToLower();
+                usersQuery = usersQuery.Where(u =>
+                    (u.FullName != null && u.FullName.ToLower().Contains(ql)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(ql)));
+            }
+
+            var users = await usersQuery
+                .OrderBy(u => u.FullName ?? u.Email)
                 .Select(u => new { u.Id, u.Email, u.FullName })
+                .Take(50)
                 .ToListAsync();
+
             return Ok(users);
         }
     }

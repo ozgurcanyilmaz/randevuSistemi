@@ -19,7 +19,7 @@ export default function Roles() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selectedUser, setSelectedUser] = useState("");
-  const [role, setRole] = useState("ServiceProvider");
+  const [role, setRole] = useState("Operator");
   const [selectedBranch, setSelectedBranch] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<"assignRole" | "assignProvider">(
     "assignRole"
@@ -273,6 +273,7 @@ export default function Roles() {
                         onChange={(e) => setRole(e.target.value)}
                       >
                         <option value="Admin">Admin</option>
+                        <option value="Operator">Operator</option>
                         <option value="ServiceProvider">ServiceProvider</option>
                         <option value="User">User</option>
                       </select>
@@ -345,7 +346,7 @@ export default function Roles() {
                     Henüz kullanıcı bulunmuyor.
                   </div>
                 ) : (
-                  <div>
+                  <div style={{ maxHeight: "500px", overflowY: "auto" }}>
                     {users.map((u, index) => (
                       <div
                         key={u.id}

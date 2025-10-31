@@ -44,6 +44,7 @@ export default function App() {
         {/* Operator Routes */}
         <Route path="/operator" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/appointments" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/operator/appointments/create" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/walk-in" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorWalkIn /></AppLayout></RoleRoute></PrivateRoute>} />
         
         {/* Provider Routes */}
