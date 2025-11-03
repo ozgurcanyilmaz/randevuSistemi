@@ -27,7 +27,6 @@ export default function UserHome() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Confirmation modal
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [booking, setBooking] = useState(false);
@@ -419,7 +418,6 @@ export default function UserHome() {
           )}
         </div>
 
-        {/* Confirmation Modal */}
         {showConfirm && selectedSlot && (
           <div
             style={{

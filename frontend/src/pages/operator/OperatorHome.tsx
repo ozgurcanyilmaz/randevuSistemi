@@ -31,13 +31,11 @@ type UserRow = {
 };
 
 export default function OperatorHome() {
-  // Approvals tab state
   const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
   const [items, setItems] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Create tab state
   const [departments, setDepartments] = useState<Department[]>([]);
   const [branchId, setBranchId] = useState<number | "">("");
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -47,18 +45,15 @@ export default function OperatorHome() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | "">("");
   const [notes, setNotes] = useState("");
-  const [userQuery, setUserQuery] = useState(""); // autocomplete input
+  const [userQuery, setUserQuery] = useState(""); 
 
-  // Autocomplete UI
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [userHighlight, setUserHighlight] = useState(-1);
 
-  // UI state
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"approvals" | "create">("approvals");
 
-  // -------- Approvals (Search / Check-in) ----------
   async function search() {
     setLoading(true);
     setError(null);
@@ -85,7 +80,6 @@ export default function OperatorHome() {
     }
   }
 
-  // -------- Create (New Appointment) ----------
   async function loadDepartments() {
     try {
       const { data } = await api.get<Department[]>("/user/departments");
@@ -154,13 +148,11 @@ export default function OperatorHome() {
     }
   }
 
-  // initial loads for Create tab
   useEffect(() => {
     loadDepartments();
-    setUserQuery(""); // ilk durumda sonuç göstermeyelim
+    setUserQuery(""); 
   }, []);
 
-  // Kullanıcı araması (debounce + min 2 karakter)
   useEffect(() => {
     const t = setTimeout(async () => {
       try {
@@ -180,7 +172,6 @@ export default function OperatorHome() {
     return () => clearTimeout(t);
   }, [userQuery]);
 
-  // dışarı tıklayınca autocomplete kapansın
   useEffect(() => {
     function onDown(e: MouseEvent) {
       const el = document.getElementById("user-autocomplete-root");
@@ -595,7 +586,6 @@ export default function OperatorHome() {
                   />
                 </div>
 
-                {/* Kullanıcı (Autocomplete) */}
                 <div id="user-autocomplete-root" style={{ position: "relative" }}>
                   <label style={labelStyle}>Kullanıcı</label>
 
@@ -661,7 +651,7 @@ export default function OperatorHome() {
                           <div
                             key={u.id}
                             onMouseDown={(e) => {
-                              e.preventDefault(); // blur'dan önce seçimi al
+                              e.preventDefault();
                               chooseUser(u);
                             }}
                             onMouseEnter={() => setUserHighlight(idx)}
@@ -775,7 +765,6 @@ export default function OperatorHome() {
   );
 }
 
-/* ---- tiny style helpers ---- */
 const thStyle: React.CSSProperties = {
   padding: "12px 24px",
   textAlign: "left",

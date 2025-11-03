@@ -86,7 +86,6 @@ export default function OperatorWalkIn() {
 
       setSuccess(`${response.data.userFullName} için walk-in randevu başarıyla oluşturuldu ve onaylandı!`);
       
-      // Reset form
       setFullName("");
       setTcKimlikNo("");
       setPhoneNumber("");
@@ -194,7 +193,6 @@ export default function OperatorWalkIn() {
             gap: "24px",
           }}
         >
-          {/* User Information */}
           <div
             style={{
               background: "white",
@@ -419,7 +417,6 @@ export default function OperatorWalkIn() {
             </div>
           </div>
 
-          {/* Appointment Selection */}
           <div
             style={{
               background: "white",

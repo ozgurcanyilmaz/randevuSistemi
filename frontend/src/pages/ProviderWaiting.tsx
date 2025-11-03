@@ -123,19 +123,15 @@ export default function ProviderWaiting() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     
-    // Filter by date range
     let result = items.filter((a) => {
       const appointmentDate = toDate(a.date);
       return appointmentDate >= dateRange.start && appointmentDate < dateRange.end;
     });
 
-    // Filter by upcoming appointments
     result = result.filter((a) => toDate(a.date, a.startTime).getTime() >= now.getTime());
 
-    // Sort by check-in time
     result.sort((a, b) => new Date(a.checkedInAt).getTime() - new Date(b.checkedInAt).getTime());
 
-    // Apply search filter
     if (s) {
       result = result.filter((a) => (a.fullName || "").toLowerCase().includes(s));
     }
@@ -176,7 +172,6 @@ export default function ProviderWaiting() {
           </p>
         </div>
 
-        {/* Time Filter Buttons */}
         <div
           style={{
             background: "white",

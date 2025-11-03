@@ -8,7 +8,6 @@ type WorkingHoursReq = {
 };
 type BreakReq = { dayOfWeek: number; startTime: string; endTime: string };
 
-// Backend uses Sunday=0, Monday=1, etc.
 const DAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cts"];
 const DEFAULT_HOURS: WorkingHoursReq[] = Array.from({ length: 7 }, (_, i) => ({
   dayOfWeek: i,
@@ -21,7 +20,7 @@ export default function Provider() {
   const [session, setSession] = useState<number>(30);
   const [hours, setHours] = useState<WorkingHoursReq[]>(DEFAULT_HOURS);
   const [breaks, setBreaks] = useState<BreakReq[]>(DEFAULT_BREAKS);
-  const [selectedDay, setSelectedDay] = useState<number>(1); // Monday
+  const [selectedDay, setSelectedDay] = useState<number>(1); 
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -156,7 +155,6 @@ export default function Provider() {
           </div>
         )}
 
-        {/* Session Duration */}
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b", marginBottom: 16 }}>⏱️ Seans Uzunluğu</h2>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
@@ -184,7 +182,6 @@ export default function Provider() {
           </div>
         </div>
 
-        {/* Day Selection */}
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b", marginBottom: 16 }}>📅 Gün Seçin</h2>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -210,7 +207,6 @@ export default function Provider() {
           </div>
         </div>
 
-        {/* Working Hours for Selected Day */}
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b", margin: 0 }}>
@@ -256,7 +252,6 @@ export default function Provider() {
           </button>
         </div>
 
-        {/* Breaks for Selected Day */}
         <div style={cardStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1e293b", margin: 0 }}>

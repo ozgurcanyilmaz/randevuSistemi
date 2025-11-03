@@ -20,7 +20,6 @@ namespace RandevuSistemi.Api.Data
                 }
             }
 
-            // Default admin
             var adminEmail = "admin@gmail.com";
             var adminPassword = "admin";
             var admin = await userManager.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
@@ -40,7 +39,6 @@ namespace RandevuSistemi.Api.Data
                 }
             }
 
-            // Default operator
             var operatorEmail = "operator@gmail.com";
             var operatorPassword = "operator";
             var operatorUser = await userManager.Users.FirstOrDefaultAsync(u => u.Email == operatorEmail);

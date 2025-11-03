@@ -73,7 +73,6 @@ namespace RandevuSistemi.Api.Controllers
             var user = await _userManager.FindByIdAsync(request.UserId);
             if (user == null) return NotFound("User not found");
 
-            // Validate role
             var validRoles = new[] { "Admin", "Operator", "ServiceProvider", "User" };
             if (!validRoles.Contains(request.Role))
             {
