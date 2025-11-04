@@ -14,11 +14,20 @@ type Appt = {
   serviceProviderProfileId?: number;
 };
 
+type Session = {
+  id: number;
+  appointmentId: number;
+  status: number;
+  startedAt: string;
+  completedAt?: string;
+};
+
 type Slot = { start: string; end: string };
 type Tab = "upcoming" | "past" | "all";
 
 export default function ProviderAppointments() {
   const [items, setItems] = useState<Appt[]>([]);
+  const [sessions, setSessions] = useState<Record<number, Session>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -27,6 +36,11 @@ export default function ProviderAppointments() {
   const [selectedAppt, setSelectedAppt] = useState<Appt | null>(null);
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [sessionAppt, setSessionAppt] = useState<Appt | null>(null);
+  const [sessionSummary, setSessionSummary] = useState("");
+  const [startingSession, setStartingSession] = useState(false);
 
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [followUpUser, setFollowUpUser] = useState<string>("");
@@ -38,8 +52,18 @@ export default function ProviderAppointments() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<Appt[]>("/provider/appointments");
-      setItems(data || []);
+      const [apptRes, sessionRes] = await Promise.all([
+        api.get<Appt[]>("/provider/appointments"),
+        api.get<Session[]>("/provider/sessions")
+      ]);
+      
+      setItems(apptRes.data || []);
+      
+      const sessionMap: Record<number, Session> = {};
+      (sessionRes.data || []).forEach(s => {
+        if (s.appointmentId) sessionMap[s.appointmentId] = s;
+      });
+      setSessions(sessionMap);
     } catch {
       setError("Randevular yüklenemedi.");
     } finally {
@@ -132,6 +156,34 @@ export default function ProviderAppointments() {
     }
   }
 
+  async function startSession() {
+    if (!sessionAppt || !sessionSummary.trim()) {
+      setError("Lütfen görüşme özeti girin");
+      return;
+    }
+    
+    setStartingSession(true);
+    setError(null);
+    
+    try {
+      await api.post("/provider/sessions/start", {
+        appointmentId: sessionAppt.id,
+        summary: sessionSummary.trim()
+      });
+      
+      setShowSessionModal(false);
+      setSessionAppt(null);
+      setSessionSummary("");
+      setSuccess("Görüşme başarıyla başlatıldı!");
+      setTimeout(() => setSuccess(null), 3000);
+      await load();
+    } catch (e: any) {
+      setError(e?.response?.data || "Görüşme başlatılamadı");
+    } finally {
+      setStartingSession(false);
+    }
+  }
+
   async function loadFollowUpSlots() {
     if (!followUpDate || items.length === 0) return;
     setLoadingSlots(true);
@@ -194,6 +246,28 @@ export default function ProviderAppointments() {
     return `${d.getFullYear()}-${mm}-${dd}`;
   }, []);
 
+  const getSessionForAppointment = (apptId: number) => {
+    return sessions[apptId];
+  };
+
+  const getSessionStatusText = (status: number) => {
+    switch (status) {
+      case 0: return "🔄 Görüşme Devam Ediyor";
+      case 1: return "📝 Görüşme Tamamlandı";
+      case 2: return "❌ İptal Edildi";
+      default: return "❓ Bilinmiyor";
+    }
+  };
+
+  const getSessionStatusColor = (status: number) => {
+    switch (status) {
+      case 0: return { bg: "#fef3c7", fg: "#92400e" };
+      case 1: return { bg: "#dbeafe", fg: "#1e40af" };
+      case 2: return { bg: "#fee2e2", fg: "#991b1b" };
+      default: return { bg: "#e5e7eb", fg: "#374151" };
+    }
+  };
+
   return (
     <div
       style={{
@@ -215,7 +289,7 @@ export default function ProviderAppointments() {
             Randevularım
           </h1>
           <p style={{ color: "#64748b" }}>
-            Randevuları yönetin, not ekleyin ve takip randevusu oluşturun.
+            Randevuları yönetin, not ekleyin, görüşme başlatın ve takip randevusu oluşturun.
           </p>
         </div>
 
@@ -401,6 +475,11 @@ export default function ProviderAppointments() {
               {filtered.map((a) => {
                 const isPast = toDate(a).getTime() < now.getTime();
                 const checked = !!a.checkedInAt;
+                const session = getSessionForAppointment(a.id);
+                const hasSession = !!session;
+                const canStartSession = checked && !hasSession;
+                const statusColor = session ? getSessionStatusColor(session.status) : null;
+                
                 return (
                   <div
                     key={a.id}
@@ -455,32 +534,51 @@ export default function ProviderAppointments() {
                           </span>
                         </div>
                       </div>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "6px 14px",
-                          borderRadius: "9999px",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          background: checked
-                            ? "#dcfce7"
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "6px 14px",
+                            borderRadius: "9999px",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            background: checked
+                              ? "#dcfce7"
+                              : isPast
+                              ? "#e5e7eb"
+                              : "#fee2e2",
+                            color: checked
+                              ? "#166534"
+                              : isPast
+                              ? "#374151"
+                              : "#991b1b",
+                          }}
+                        >
+                          {checked
+                            ? "✓ Check-in"
                             : isPast
-                            ? "#e5e7eb"
-                            : "#fee2e2",
-                          color: checked
-                            ? "#166534"
-                            : isPast
-                            ? "#374151"
-                            : "#991b1b",
-                        }}
-                      >
-                        {checked
-                          ? "✓ Check-in"
-                          : isPast
-                          ? "📋 Geçti"
-                          : "⏳ Bekliyor"}
-                      </span>
+                            ? "📋 Geçti"
+                            : "⏳ Bekliyor"}
+                        </span>
+                        
+                        {hasSession && statusColor && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "6px 14px",
+                              borderRadius: "9999px",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              background: statusColor.bg,
+                              color: statusColor.fg,
+                            }}
+                          >
+                            {getSessionStatusText(session.status)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {a.notes && (
@@ -536,6 +634,34 @@ export default function ProviderAppointments() {
                     )}
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {canStartSession && (
+                        <button
+                          style={{
+                            background: "#8b5cf6",
+                            color: "white",
+                            fontWeight: 500,
+                            padding: "8px 16px",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            transition: "all 0.2s",
+                          }}
+                          onClick={() => {
+                            setSessionAppt(a);
+                            setShowSessionModal(true);
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#7c3aed";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = "#8b5cf6";
+                          }}
+                        >
+                          🎯 Görüşme Başlat
+                        </button>
+                      )}
+                      
                       <button
                         style={{
                           background: "#eff6ff",
@@ -595,6 +721,132 @@ export default function ProviderAppointments() {
             </div>
           )}
         </div>
+
+        {showSessionModal && sessionAppt && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => !startingSession && setShowSessionModal(false)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 16,
+                padding: 32,
+                maxWidth: 500,
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  marginBottom: 16,
+                }}
+              >
+                🎯 Görüşme Başlat
+              </h2>
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: "#f8fafc",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{ fontSize: 14, color: "#64748b", marginBottom: 4 }}
+                >
+                  👤 Kullanıcı:{" "}
+                  <strong style={{ color: "#1e293b" }}>
+                    {sessionAppt.fullName}
+                  </strong>
+                </div>
+                <div style={{ fontSize: 14, color: "#64748b" }}>
+                  📅 Randevu: {formatDate(sessionAppt.date)} -{" "}
+                  {formatTime(sessionAppt.startTime)}
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: 16 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: 8,
+                  }}
+                >
+                  Görüşme Özeti *
+                </label>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="Bu görüşmenin kısa bir özetini yazın..."
+                  value={sessionSummary}
+                  onChange={(e) => setSessionSummary(e.target.value)}
+                  style={{ marginBottom: 8 }}
+                />
+                <div style={{ fontSize: 12, color: "#64748b" }}>
+                  Bu özet görüşme başlatıldıktan sonra güncellenebilir
+                </div>
+              </div>
+              
+              <div
+                style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}
+              >
+                <button
+                  style={{
+                    background: "transparent",
+                    color: "#64748b",
+                    fontWeight: 500,
+                    padding: "10px 20px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                  onClick={() => {
+                    if (!startingSession) {
+                      setShowSessionModal(false);
+                      setSessionSummary("");
+                    }
+                  }}
+                  disabled={startingSession}
+                >
+                  İptal
+                </button>
+                <button
+                  style={{
+                    background: sessionSummary.trim() ? "#8b5cf6" : "#94a3b8",
+                    color: "white",
+                    fontWeight: 500,
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: 8,
+                    cursor: sessionSummary.trim() && !startingSession ? "pointer" : "not-allowed",
+                    fontSize: 14,
+                  }}
+                  onClick={startSession}
+                  disabled={!sessionSummary.trim() || startingSession}
+                >
+                  {startingSession ? "Başlatılıyor..." : "🎯 Görüşmeyi Başlat"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {selectedAppt && (
           <div
