@@ -16,6 +16,7 @@ namespace RandevuSistemi.Api.Data
         public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
         public DbSet<BreakPeriod> BreakPeriods => Set<BreakPeriod>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
+        public DbSet<Session> Sessions => Set<Session>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -62,6 +63,12 @@ namespace RandevuSistemi.Api.Data
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Session>()
+                .HasOne(s => s.Appointment)
+                .WithMany()
+                .HasForeignKey(s => s.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -237,7 +237,85 @@ namespace RandevuSistemi.Api.Controllers
                 .ToListAsync();
             return Ok(appts);
         }
+
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetMySessions()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var sessions = await _db.Sessions
+                .Include(s => s.Appointment)
+                    .ThenInclude(a => a.ServiceProvider)
+                        .ThenInclude(sp => sp.Branch)
+                .Where(s => s.Appointment.UserId == userId && s.Status == SessionStatus.Completed)
+                .OrderByDescending(s => s.CompletedAt)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Summary,
+                    s.Notes,
+                    s.Outcome,
+                    s.ActionItems,
+                    s.NextSessionDate,
+                    s.NextSessionNotes,
+                    s.CompletedAt,
+                    Provider = new
+                    {
+                        Name = s.Appointment.ServiceProvider.User.FullName ?? s.Appointment.ServiceProvider.User.Email,
+                        BranchName = s.Appointment.ServiceProvider.Branch.Name
+                    },
+                    Appointment = new
+                    {
+                        s.Appointment.Date,
+                        s.Appointment.StartTime,
+                        s.Appointment.EndTime
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(sessions);
+        }
+
+        [HttpGet("sessions/{id}")]
+        public async Task<IActionResult> GetSessionDetail(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var session = await _db.Sessions
+                .Include(s => s.Appointment)
+                    .ThenInclude(a => a.ServiceProvider)
+                        .ThenInclude(sp => sp.Branch)
+                .Where(s => s.Id == id
+                    && s.Appointment.UserId == userId
+                    && s.Status == SessionStatus.Completed)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Summary,
+                    s.Notes,
+                    s.Outcome,
+                    s.ActionItems,
+                    s.NextSessionDate,
+                    s.NextSessionNotes,
+                    s.CompletedAt,
+                    Provider = new
+                    {
+                        Name = s.Appointment.ServiceProvider.User.FullName ?? s.Appointment.ServiceProvider.User.Email,
+                        BranchName = s.Appointment.ServiceProvider.Branch.Name
+                    },
+                    Appointment = new
+                    {
+                        s.Appointment.Date,
+                        s.Appointment.StartTime,
+                        s.Appointment.EndTime
+                    }
+                })
+                .FirstOrDefaultAsync();
+
+            if (session == null) return NotFound("Session not found");
+            return Ok(session);
+        }
     }
 }
-
-
