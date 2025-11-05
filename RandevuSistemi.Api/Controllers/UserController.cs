@@ -253,6 +253,7 @@ namespace RandevuSistemi.Api.Controllers
                 .Select(s => new
                 {
                     s.Id,
+                    s.AppointmentId,
                     s.Summary,
                     s.Notes,
                     s.Outcome,
@@ -267,6 +268,7 @@ namespace RandevuSistemi.Api.Controllers
                     },
                     Appointment = new
                     {
+                        Id = s.Appointment.Id,
                         s.Appointment.Date,
                         s.Appointment.StartTime,
                         s.Appointment.EndTime

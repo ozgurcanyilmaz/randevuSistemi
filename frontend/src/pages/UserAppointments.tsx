@@ -11,6 +11,28 @@ type Appt = {
   providerNotes?: string;
 };
 
+type SessionDetail = {
+  id: number;
+  appointmentId: number;
+  summary: string;
+  notes?: string;
+  outcome?: string;
+  actionItems?: string;
+  nextSessionDate?: string;
+  nextSessionNotes?: string;
+  completedAt?: string;
+  provider: {
+    name: string;
+    branchName: string;
+  };
+  appointment: {
+    id: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
+};
+
 type Tab = "upcoming" | "past" | "all";
 
 export default function UserAppointments() {
@@ -19,16 +41,61 @@ export default function UserAppointments() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
 
+  const [selectedSession, setSelectedSession] = useState<SessionDetail | null>(
+    null
+  );
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [loadingSession, setLoadingSession] = useState(false);
+  const [appointmentSessions, setAppointmentSessions] = useState<
+    Record<number, number>
+  >({});
+
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<Appt[]>("/user/appointments");
-      setItems(data);
+      const [apptsRes, sessionsRes] = await Promise.all([
+        api.get<Appt[]>("/user/appointments"),
+        api.get<SessionDetail[]>("/user/sessions"),
+      ]);
+
+      setItems(apptsRes.data);
+
+      // Session'ları appointment ID'sine göre map'le
+      const sessionMap: Record<number, number> = {};
+      sessionsRes.data.forEach((s: any) => {
+        if (s.appointmentId) {
+          sessionMap[s.appointmentId] = s.id;
+        }
+      });
+      setAppointmentSessions(sessionMap);
     } catch {
       setError("Randevular yüklenemedi.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSessionForAppointment(appointmentId: number) {
+    setLoadingSession(true);
+    setError(null);
+    try {
+      const sessionId = appointmentSessions[appointmentId];
+      if (!sessionId) {
+        setError("Bu randevu için henüz tamamlanmış görüşme bulunamadı.");
+        setLoadingSession(false);
+        return;
+      }
+
+      const { data } = await api.get<SessionDetail>(
+        `/user/sessions/${sessionId}`
+      );
+      setSelectedSession(data);
+      setShowSessionModal(true);
+    } catch {
+      setError("Görüşme detayı yüklenemedi.");
+    } finally {
+      setLoadingSession(false);
     }
   }
 
@@ -41,6 +108,7 @@ export default function UserAppointments() {
     const d = new Date(dt);
     return isNaN(d.getTime()) ? new Date(a.date) : d;
   };
+
   const formatDate = (dStr: string) => {
     const d = new Date(dStr);
     if (!isNaN(d.getTime())) {
@@ -54,20 +122,34 @@ export default function UserAppointments() {
     if (y && m && dd) return `${dd}.${m}.${y}`;
     return dStr;
   };
+
   const formatTime = (t: string) => t;
+
+  const formatDateTime = (s?: string) =>
+    s
+      ? new Date(s).toLocaleString("tr-TR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
 
   const now = new Date();
   const sorted = useMemo(
     () => [...items].sort((a, b) => toDate(a).getTime() - toDate(b).getTime()),
     [items]
   );
+
   const upcoming = useMemo(
     () => sorted.filter((a) => toDate(a).getTime() >= now.getTime()),
-    [sorted]
+    [sorted, now]
   );
+
   const past = useMemo(
     () => sorted.filter((a) => toDate(a).getTime() < now.getTime()),
-    [sorted]
+    [sorted, now]
   );
 
   const dataForTab =
@@ -94,9 +176,25 @@ export default function UserAppointments() {
             Randevularım
           </h1>
           <p style={{ color: "#64748b" }}>
-            Yaklaşan randevuları takip edin, geçmiş ziyaretlerinizi ve ilgili notlarını görüntüleyin.
+            Yaklaşan randevuları takip edin, geçmiş görüşme raporlarınızı
+            görüntüleyin.
           </p>
         </div>
+
+        {error && (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px 16px",
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "8px",
+              color: "#991b1b",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <div
           style={{
@@ -191,21 +289,6 @@ export default function UserAppointments() {
               Yükleniyor...
             </div>
           )}
-          {error && (
-            <div
-              style={{
-                marginBottom: "16px",
-                padding: "12px 16px",
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: "8px",
-                color: "#991b1b",
-                fontSize: "14px",
-              }}
-            >
-              {error}
-            </div>
-          )}
 
           {!loading && dataForTab.length === 0 ? (
             <div
@@ -277,7 +360,8 @@ export default function UserAppointments() {
                         >
                           <span>📅 {formatDate(a.date)}</span>
                           <span>
-                            ⏰ {formatTime(a.startTime)} – {formatTime(a.endTime)}
+                            ⏰ {formatTime(a.startTime)} –{" "}
+                            {formatTime(a.endTime)}
                           </span>
                         </div>
                       </div>
@@ -325,6 +409,36 @@ export default function UserAppointments() {
                         </div>
                       </div>
                     )}
+
+                    {isPast && appointmentSessions[a.id] && (
+                      <div style={{ marginTop: 12 }}>
+                        <button
+                          style={{
+                            background: "#eff6ff",
+                            color: "#1d4ed8",
+                            fontWeight: 500,
+                            padding: "8px 16px",
+                            border: "1px solid #bfdbfe",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            transition: "all 0.2s",
+                          }}
+                          onClick={() => loadSessionForAppointment(a.id)}
+                          disabled={loadingSession}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#dbeafe";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = "#eff6ff";
+                          }}
+                        >
+                          {loadingSession
+                            ? "Yükleniyor..."
+                            : "📄 Görüşme Raporunu Gör"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -344,9 +458,268 @@ export default function UserAppointments() {
             lineHeight: 1.5,
           }}
         >
-          💡 <strong>Hatırlatma:</strong> Randevunuzun saatinde şubede hazır bulunmayı unutmayın.
-          Değişiklik/iptal için şube ile iletişime geçebilirsiniz.
+          💡 <strong>Hatırlatma:</strong> Randevunuzun saatinde şubede hazır
+          bulunmayı unutmayın. Geçmiş randevularınızın görüşme raporlarını
+          görüntüleyebilirsiniz.
         </div>
+
+        {/* Session Detail Modal */}
+        {showSessionModal && selectedSession && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: 24,
+            }}
+            onClick={() => setShowSessionModal(false)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 16,
+                padding: 32,
+                maxWidth: 700,
+                width: "100%",
+                maxHeight: "90vh",
+                overflow: "auto",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ marginBottom: 24 }}>
+                <h2
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    marginBottom: 8,
+                  }}
+                >
+                  📋 Görüşme Raporu
+                </h2>
+                <div style={{ fontSize: 14, color: "#64748b" }}>
+                  👤 {selectedSession.provider.name} • 🏪{" "}
+                  {selectedSession.provider.branchName}
+                </div>
+                <div style={{ fontSize: 14, color: "#64748b" }}>
+                  📅 {formatDate(selectedSession.appointment.date)} • ⏰{" "}
+                  {selectedSession.appointment.startTime}
+                </div>
+                {selectedSession.completedAt && (
+                  <div style={{ fontSize: 13, color: "#16a34a", marginTop: 4 }}>
+                    ✓ Tamamlanma: {formatDateTime(selectedSession.completedAt)}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "grid", gap: 20 }}>
+                {selectedSession.summary && (
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      padding: 16,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#64748b",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      📝 Görüşme Özeti
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: "#0f172a",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {selectedSession.summary}
+                    </div>
+                  </div>
+                )}
+
+                {selectedSession.notes && (
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      padding: 16,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#64748b",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      💭 Notlar
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: "#0f172a",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {selectedSession.notes}
+                    </div>
+                  </div>
+                )}
+
+                {selectedSession.outcome && (
+                  <div
+                    style={{
+                      background: "#eff6ff",
+                      padding: 16,
+                      borderRadius: 8,
+                      border: "1px solid #bfdbfe",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#1e40af",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      🎯 Sonuç / Değerlendirme
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: "#1e40af",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {selectedSession.outcome}
+                    </div>
+                  </div>
+                )}
+
+                {selectedSession.actionItems && (
+                  <div
+                    style={{
+                      background: "#fef3c7",
+                      padding: 16,
+                      borderRadius: 8,
+                      border: "1px solid #fcd34d",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#92400e",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      ✅ Aksiyon Maddeleri
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: "#92400e",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {selectedSession.actionItems}
+                    </div>
+                  </div>
+                )}
+
+                {(selectedSession.nextSessionDate ||
+                  selectedSession.nextSessionNotes) && (
+                  <div
+                    style={{
+                      background: "#ecfdf5",
+                      padding: 16,
+                      borderRadius: 8,
+                      border: "1px solid #bbf7d0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#166534",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      📅 Sonraki Görüşme
+                    </div>
+                    {selectedSession.nextSessionDate && (
+                      <div
+                        style={{
+                          fontSize: 15,
+                          color: "#166534",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <strong>Tarih:</strong>{" "}
+                        {formatDate(selectedSession.nextSessionDate)}
+                      </div>
+                    )}
+                    {selectedSession.nextSessionNotes && (
+                      <div
+                        style={{
+                          fontSize: 15,
+                          color: "#166534",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        <strong>Notlar:</strong>{" "}
+                        {selectedSession.nextSessionNotes}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: 24, textAlign: "right" }}>
+                <button
+                  style={{
+                    background: "#2563eb",
+                    color: "white",
+                    fontWeight: 500,
+                    padding: "10px 24px",
+                    border: "none",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                  onClick={() => setShowSessionModal(false)}
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
