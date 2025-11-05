@@ -36,7 +36,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   const adminRootActive = pathname === "/admin";
   const providerRootActive = pathname === "/provider/appointments";
-  const operatorRootActive = pathname === "/operator" || pathname === "/operator/appointments";
+  const operatorRootActive =
+    pathname === "/operator" || pathname === "/operator/appointments";
 
   const goHome = () => {
     const homePath = isAdmin
@@ -360,6 +361,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     >
                       <i className="nav-icon fas fa-calendar-day" />
                       <p>Randevular</p>
+                    </NavLink>
+                  </li>
+                  <li className="nav-item">
+                    <NavLink
+                      to="/provider/sessions"
+                      end
+                      className={({ isActive }) =>
+                        `nav-link${isActive ? " active" : ""}`
+                      }
+                    >
+                      <i className="nav-icon fas fa-clipboard-list" />
+                      <p>Görüşmeler</p>
                     </NavLink>
                   </li>
                   <li className="nav-item">

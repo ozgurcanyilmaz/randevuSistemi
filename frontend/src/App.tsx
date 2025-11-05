@@ -48,6 +48,7 @@ export default function App() {
         <Route path="/provider" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><Provider /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/provider/appointments" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><ProviderAppointments /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/provider/waiting" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><ProviderWaiting /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/provider/sessions" element={<PrivateRoute><RoleRoute role="ServiceProvider"><AppLayout><ProviderSessions /></AppLayout></RoleRoute></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   )
