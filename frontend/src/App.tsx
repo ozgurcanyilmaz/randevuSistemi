@@ -14,6 +14,7 @@ import AppLayout from './components/AppLayout'
 import ProfilePage from './pages/Profile'
 import OperatorHome from './pages/operator/OperatorHome'
 import OperatorWalkIn from './pages/operator/OperatorWalkIn'
+import ProviderSessions from './pages/ProviderSessions'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
