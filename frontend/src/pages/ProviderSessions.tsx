@@ -730,51 +730,6 @@ export default function ProviderSessions() {
                     disabled={selectedSession.status === 1}
                   />
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: "#334155",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Sonraki Görüşme Tarihi
-                    </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      min={todayStr}
-                      value={editingNextDate}
-                      onChange={(e) => setEditingNextDate(e.target.value)}
-                      disabled={selectedSession.status === 1}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: "#334155",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Sonraki Görüşme Notları
-                    </label>
-                    <input
-                      className="form-control"
-                      placeholder="Sonraki görüşme için notlar..."
-                      value={editingNextNotes}
-                      onChange={(e) => setEditingNextNotes(e.target.value)}
-                      disabled={selectedSession.status === 1}
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label
                     style={{

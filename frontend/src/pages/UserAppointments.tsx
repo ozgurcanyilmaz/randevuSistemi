@@ -50,6 +50,13 @@ export default function UserAppointments() {
     Record<number, number>
   >({});
 
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appt | null>(
+    null
+  );
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -61,7 +68,6 @@ export default function UserAppointments() {
 
       setItems(apptsRes.data);
 
-      // Session'ları appointment ID'sine göre map'le
       const sessionMap: Record<number, number> = {};
       sessionsRes.data.forEach((s: any) => {
         if (s.appointmentId) {
@@ -96,6 +102,27 @@ export default function UserAppointments() {
       setError("Görüşme detayı yüklenemedi.");
     } finally {
       setLoadingSession(false);
+    }
+  }
+
+  async function cancelAppointment() {
+    if (!appointmentToCancel) return;
+    setCancelling(true);
+    setError(null);
+
+    try {
+      await api.delete(`/user/appointments/${appointmentToCancel.id}`);
+      setShowCancelModal(false);
+      setAppointmentToCancel(null);
+      setCancelSuccess("Randevunuz başarıyla iptal edildi.");
+      setTimeout(() => setCancelSuccess(null), 3000);
+      await load();
+    } catch (e: any) {
+      setError(e?.response?.data || "Randevu iptal edilemedi.");
+      setShowCancelModal(false);
+      setAppointmentToCancel(null);
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -193,6 +220,21 @@ export default function UserAppointments() {
             }}
           >
             {error}
+          </div>
+        )}
+
+        {cancelSuccess && (
+          <div
+            style={{
+              marginBottom: "16px",
+              padding: "12px 16px",
+              background: "#ecfdf5",
+              border: "1px solid #bbf7d0",
+              borderRadius: "8px",
+              color: "#166534",
+            }}
+          >
+            {cancelSuccess}
           </div>
         )}
 
@@ -439,6 +481,36 @@ export default function UserAppointments() {
                         </button>
                       </div>
                     )}
+
+                    {!isPast && (
+                      <div style={{ marginTop: 12 }}>
+                        <button
+                          style={{
+                            background: "#fef2f2",
+                            color: "#dc2626",
+                            fontWeight: 500,
+                            padding: "8px 16px",
+                            border: "1px solid #fecaca",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            transition: "all 0.2s",
+                          }}
+                          onClick={() => {
+                            setAppointmentToCancel(a);
+                            setShowCancelModal(true);
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#fee2e2";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = "#fef2f2";
+                          }}
+                        >
+                          ❌ Randevuyu İptal Et
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -649,55 +721,6 @@ export default function UserAppointments() {
                     </div>
                   </div>
                 )}
-
-                {(selectedSession.nextSessionDate ||
-                  selectedSession.nextSessionNotes) && (
-                  <div
-                    style={{
-                      background: "#ecfdf5",
-                      padding: 16,
-                      borderRadius: 8,
-                      border: "1px solid #bbf7d0",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#166534",
-                        marginBottom: 8,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      📅 Sonraki Görüşme
-                    </div>
-                    {selectedSession.nextSessionDate && (
-                      <div
-                        style={{
-                          fontSize: 15,
-                          color: "#166534",
-                          marginBottom: 4,
-                        }}
-                      >
-                        <strong>Tarih:</strong>{" "}
-                        {formatDate(selectedSession.nextSessionDate)}
-                      </div>
-                    )}
-                    {selectedSession.nextSessionNotes && (
-                      <div
-                        style={{
-                          fontSize: 15,
-                          color: "#166534",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        <strong>Notlar:</strong>{" "}
-                        {selectedSession.nextSessionNotes}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               <div style={{ marginTop: 24, textAlign: "right" }}>
@@ -720,7 +743,162 @@ export default function UserAppointments() {
             </div>
           </div>
         )}
+
+        {showCancelModal && appointmentToCancel && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: 24,
+            }}
+            onClick={() => !cancelling && setShowCancelModal(false)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 16,
+                padding: 32,
+                maxWidth: 500,
+                width: "100%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    background: "#fef2f2",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px",
+                    fontSize: 32,
+                  }}
+                >
+                  ⚠️
+                </div>
+                <h2
+                  style={{
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: "#1e293b",
+                    marginBottom: 8,
+                  }}
+                >
+                  Randevu İptali
+                </h2>
+                <p style={{ color: "#64748b", fontSize: 14 }}>
+                  Bu randevuyu iptal etmek istediğinizden emin misiniz?
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: "#f8fafc",
+                  borderRadius: 12,
+                  padding: 20,
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  style={{ fontSize: 14, color: "#334155", marginBottom: 12 }}
+                >
+                  <strong>İptal edilecek randevu:</strong>
+                </div>
+                <div
+                  style={{ fontSize: 14, color: "#64748b", lineHeight: 1.8 }}
+                >
+                  <div>🏪 {appointmentToCancel.branchName}</div>
+                  <div>📅 {formatDate(appointmentToCancel.date)}</div>
+                  <div>
+                    ⏰ {formatTime(appointmentToCancel.startTime)} –{" "}
+                    {formatTime(appointmentToCancel.endTime)}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#fef3c7",
+                  border: "1px solid #fcd34d",
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 24,
+                  fontSize: 13,
+                  color: "#92400e",
+                  lineHeight: 1.5,
+                }}
+              >
+                ⚠️ <strong>Uyarı:</strong> İptal edilen randevu geri alınamaz.
+                İptal sonrasında aynı saati tekrar seçebilirsiniz.
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    color: "#64748b",
+                    fontWeight: 500,
+                    padding: "12px 24px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    fontSize: 15,
+                    transition: "all 0.2s",
+                  }}
+                  onClick={() => !cancelling && setShowCancelModal(false)}
+                  disabled={cancelling}
+                  onMouseOver={(e) => {
+                    if (!cancelling)
+                      e.currentTarget.style.background = "#f1f5f9";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  Vazgeç
+                </button>
+                <button
+                  style={{
+                    flex: 1,
+                    background: cancelling ? "#94a3b8" : "#dc2626",
+                    color: "white",
+                    fontWeight: 600,
+                    padding: "12px 24px",
+                    border: "none",
+                    borderRadius: 8,
+                    cursor: cancelling ? "not-allowed" : "pointer",
+                    fontSize: 15,
+                    transition: "all 0.2s",
+                  }}
+                  onClick={cancelAppointment}
+                  disabled={cancelling}
+                  onMouseOver={(e) => {
+                    if (!cancelling)
+                      e.currentTarget.style.background = "#b91c1c";
+                  }}
+                  onMouseOut={(e) => {
+                    if (!cancelling)
+                      e.currentTarget.style.background = "#dc2626";
+                  }}
+                >
+                  {cancelling ? "İptal Ediliyor..." : "✓ Evet, İptal Et"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

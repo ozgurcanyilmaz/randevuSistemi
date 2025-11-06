@@ -319,5 +319,27 @@ namespace RandevuSistemi.Api.Controllers
             if (session == null) return NotFound("Session not found");
             return Ok(session);
         }
+
+        [HttpDelete("appointments/{id}")]
+        public async Task<IActionResult> CancelAppointment(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var appointment = await _db.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
+            if (appointment == null)
+                return NotFound("Randevu bulunamadı.");
+
+            var appointmentDateTime = appointment.Date.ToDateTime(appointment.StartTime);
+            if (appointmentDateTime < DateTime.Now)
+                return BadRequest("Geçmiş randevular iptal edilemez.");
+
+            _db.Appointments.Remove(appointment);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { Message = "Randevu başarıyla iptal edildi." });
+        }
     }
 }

@@ -52,7 +52,9 @@ export default function UserHome() {
     setLoadingProviders(true);
     setError(null);
     try {
-      const { data } = await api.get<Provider[]>(`/user/branches/${id}/providers`);
+      const { data } = await api.get<Provider[]>(
+        `/user/branches/${id}/providers`
+      );
       setProviders(data);
     } catch {
       setError("İlgili listesi yüklenemedi.");
@@ -95,10 +97,34 @@ export default function UserHome() {
         start: selectedSlot.start,
         end: selectedSlot.end,
       });
+
       setShowConfirm(false);
       setSelectedSlot(null);
-      alert("Randevu başarıyla oluşturuldu!");
       if (providerId && date) await loadSlots(Number(providerId), date);
+
+      // Show success modal
+      const modal = document.createElement("div");
+      modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 500px;
+        text-align: center;
+      `;
+      modal.innerHTML = `
+        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px;">✓</div>
+        <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Başarılı!</h2>
+        <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">Randevunuz başarıyla oluşturuldu! Randevunuzu 'Randevularım' bölümünden görüntüleyebilirsiniz.</p>
+        <button onclick="this.parentElement.remove()" style="background: #16a34a; color: white; font-weight: 600; padding: 12px 32px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">Tamam</button>
+      `;
+      document.body.appendChild(modal);
+      setTimeout(() => modal.remove(), 5000);
     } catch (e: any) {
       const msg = e?.response?.data ?? "Randevu alınamadı";
       setShowConfirm(false);
@@ -361,7 +387,8 @@ export default function UserHome() {
                   border: "1px dashed #cbd5e1",
                 }}
               >
-                Seçilen tarihte uygun saat bulunamadı. Lütfen başka bir tarih deneyin.
+                Seçilen tarihte uygun saat bulunamadı. Lütfen başka bir tarih
+                deneyin.
               </div>
             )}
 
@@ -399,7 +426,8 @@ export default function UserHome() {
                     e.currentTarget.style.background = "#eff6ff";
                     e.currentTarget.style.borderColor = "#60a5fa";
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 99, 235, 0.2)";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(37, 99, 235, 0.2)";
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.background = "white";
@@ -609,8 +637,8 @@ export default function UserHome() {
                   lineHeight: 1.5,
                 }}
               >
-                💡 <strong>Not:</strong> Randevunuza zamanında gelmeyi unutmayın.
-                Değişiklik için şube ile iletişime geçebilirsiniz.
+                💡 <strong>Not:</strong> Randevunuza zamanında gelmeyi
+                unutmayın. Değişiklik için şube ile iletişime geçebilirsiniz.
               </div>
 
               <div style={{ display: "flex", gap: 12 }}>
