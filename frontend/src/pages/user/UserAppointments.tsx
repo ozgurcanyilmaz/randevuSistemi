@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 type Appt = {
   id: number;
@@ -901,4 +901,3 @@ export default function UserAppointments() {
     </div>
   );
 }
-

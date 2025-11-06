@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 type WaitingItem = {
   id: number;
@@ -29,7 +29,7 @@ export default function ProviderWaiting() {
   const getDateRange = (filter: TimeFilter) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     switch (filter) {
       case "today":
         return { start: today, end: new Date(today.getTime() + 86400000) };
@@ -74,7 +74,7 @@ export default function ProviderWaiting() {
     const parts = dStr.split("-");
     return parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dStr;
   };
-  
+
   const formatTime = (t: string) => t;
   const formatDateTime = (s?: string) =>
     s
@@ -122,18 +122,27 @@ export default function ProviderWaiting() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    
+
     let result = items.filter((a) => {
       const appointmentDate = toDate(a.date);
-      return appointmentDate >= dateRange.start && appointmentDate < dateRange.end;
+      return (
+        appointmentDate >= dateRange.start && appointmentDate < dateRange.end
+      );
     });
 
-    result = result.filter((a) => toDate(a.date, a.startTime).getTime() >= now.getTime());
+    result = result.filter(
+      (a) => toDate(a.date, a.startTime).getTime() >= now.getTime()
+    );
 
-    result.sort((a, b) => new Date(a.checkedInAt).getTime() - new Date(b.checkedInAt).getTime());
+    result.sort(
+      (a, b) =>
+        new Date(a.checkedInAt).getTime() - new Date(b.checkedInAt).getTime()
+    );
 
     if (s) {
-      result = result.filter((a) => (a.fullName || "").toLowerCase().includes(s));
+      result = result.filter((a) =>
+        (a.fullName || "").toLowerCase().includes(s)
+      );
     }
 
     return result;
@@ -141,9 +150,12 @@ export default function ProviderWaiting() {
 
   const getFilterLabel = (filter: TimeFilter) => {
     switch (filter) {
-      case "today": return "Bugün";
-      case "week": return "Bu Hafta";
-      case "month": return "Bu Ay";
+      case "today":
+        return "Bugün";
+      case "week":
+        return "Bu Hafta";
+      case "month":
+        return "Bu Ay";
     }
   };
 
@@ -168,7 +180,8 @@ export default function ProviderWaiting() {
             Bekleyen Kullanıcılar
           </h1>
           <p style={{ color: "#64748b" }}>
-            Check-in yapmış ve yaklaşan randevuları olan kullanıcıları görüntüleyin.
+            Check-in yapmış ve yaklaşan randevuları olan kullanıcıları
+            görüntüleyin.
           </p>
         </div>
 
@@ -196,18 +209,24 @@ export default function ProviderWaiting() {
                   border: "none",
                   background: timeFilter === filter ? "#eff6ff" : "transparent",
                   color: timeFilter === filter ? "#1d4ed8" : "#64748b",
-                  borderBottom: timeFilter === filter ? "2px solid #2563eb" : "none",
+                  borderBottom:
+                    timeFilter === filter ? "2px solid #2563eb" : "none",
                   transition: "all 0.2s",
                 }}
               >
-                {getFilterLabel(filter)} ({
-                  items.filter(a => {
+                {getFilterLabel(filter)} (
+                {
+                  items.filter((a) => {
                     const range = getDateRange(filter);
                     const appointmentDate = toDate(a.date);
-                    return appointmentDate >= range.start && appointmentDate < range.end &&
-                           toDate(a.date, a.startTime).getTime() >= now.getTime();
+                    return (
+                      appointmentDate >= range.start &&
+                      appointmentDate < range.end &&
+                      toDate(a.date, a.startTime).getTime() >= now.getTime()
+                    );
                   }).length
-                })
+                }
+                )
               </button>
             ))}
           </div>

@@ -1,20 +1,27 @@
+import type { JSX } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+
 import { isAuthenticated, getRoles } from './services/auth'
+import AppLayout from './components/AppLayout'
+
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Admin from './pages/Admin'
-import Provider from './pages/Provider'
-import UserHome from './pages/UserHome'
+import ProfilePage from './pages/Profile'
+//admin
+import Admin from './pages/admin/Admin'
 import Departments from './pages/admin/Departments'
 import Roles from './pages/admin/Roles'
-import UserAppointments from './pages/UserAppointments'
-import ProviderAppointments from './pages/ProviderAppointments'
-import ProviderWaiting from './pages/ProviderWaiting'
-import AppLayout from './components/AppLayout'
-import ProfilePage from './pages/Profile'
+//operator
 import OperatorHome from './pages/operator/OperatorHome'
 import OperatorWalkIn from './pages/operator/OperatorWalkIn'
-import ProviderSessions from './pages/ProviderSessions'
+//provider
+import Provider from './pages/provider/Provider'
+import ProviderAppointments from './pages/provider/ProviderAppointments'
+import ProviderSessions from './pages/provider/ProviderSessions'
+import ProviderWaiting from './pages/provider/ProviderWaiting'
+//user
+import UserAppointments from './pages/user/UserAppointments'
+import UserHome from './pages/user/UserHome'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />

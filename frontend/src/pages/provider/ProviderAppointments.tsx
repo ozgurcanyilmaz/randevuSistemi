@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 type Appt = {
   id: number;
@@ -54,13 +54,13 @@ export default function ProviderAppointments() {
     try {
       const [apptRes, sessionRes] = await Promise.all([
         api.get<Appt[]>("/provider/appointments"),
-        api.get<Session[]>("/provider/sessions")
+        api.get<Session[]>("/provider/sessions"),
       ]);
-      
+
       setItems(apptRes.data || []);
-      
+
       const sessionMap: Record<number, Session> = {};
-      (sessionRes.data || []).forEach(s => {
+      (sessionRes.data || []).forEach((s) => {
         if (s.appointmentId) sessionMap[s.appointmentId] = s;
       });
       setSessions(sessionMap);
@@ -161,16 +161,16 @@ export default function ProviderAppointments() {
       setError("Lütfen görüşme özeti girin");
       return;
     }
-    
+
     setStartingSession(true);
     setError(null);
-    
+
     try {
       await api.post("/provider/sessions/start", {
         appointmentId: sessionAppt.id,
-        summary: sessionSummary.trim()
+        summary: sessionSummary.trim(),
       });
-      
+
       setShowSessionModal(false);
       setSessionAppt(null);
       setSessionSummary("");
@@ -252,19 +252,27 @@ export default function ProviderAppointments() {
 
   const getSessionStatusText = (status: number) => {
     switch (status) {
-      case 0: return "🔄 Görüşme Devam Ediyor";
-      case 1: return "📝 Görüşme Tamamlandı";
-      case 2: return "❌ İptal Edildi";
-      default: return "❓ Bilinmiyor";
+      case 0:
+        return "🔄 Görüşme Devam Ediyor";
+      case 1:
+        return "📝 Görüşme Tamamlandı";
+      case 2:
+        return "❌ İptal Edildi";
+      default:
+        return "❓ Bilinmiyor";
     }
   };
 
   const getSessionStatusColor = (status: number) => {
     switch (status) {
-      case 0: return { bg: "#fef3c7", fg: "#92400e" };
-      case 1: return { bg: "#dbeafe", fg: "#1e40af" };
-      case 2: return { bg: "#fee2e2", fg: "#991b1b" };
-      default: return { bg: "#e5e7eb", fg: "#374151" };
+      case 0:
+        return { bg: "#fef3c7", fg: "#92400e" };
+      case 1:
+        return { bg: "#dbeafe", fg: "#1e40af" };
+      case 2:
+        return { bg: "#fee2e2", fg: "#991b1b" };
+      default:
+        return { bg: "#e5e7eb", fg: "#374151" };
     }
   };
 
@@ -289,7 +297,8 @@ export default function ProviderAppointments() {
             Randevularım
           </h1>
           <p style={{ color: "#64748b" }}>
-            Randevuları yönetin, not ekleyin, görüşme başlatın ve takip randevusu oluşturun.
+            Randevuları yönetin, not ekleyin, görüşme başlatın ve takip
+            randevusu oluşturun.
           </p>
         </div>
 
@@ -478,8 +487,10 @@ export default function ProviderAppointments() {
                 const session = getSessionForAppointment(a.id);
                 const hasSession = !!session;
                 const canStartSession = checked && !hasSession;
-                const statusColor = session ? getSessionStatusColor(session.status) : null;
-                
+                const statusColor = session
+                  ? getSessionStatusColor(session.status)
+                  : null;
+
                 return (
                   <div
                     key={a.id}
@@ -534,7 +545,9 @@ export default function ProviderAppointments() {
                           </span>
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <div
+                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                      >
                         <span
                           style={{
                             display: "inline-flex",
@@ -561,7 +574,7 @@ export default function ProviderAppointments() {
                             ? "📋 Geçti"
                             : "⏳ Bekliyor"}
                         </span>
-                        
+
                         {hasSession && statusColor && (
                           <span
                             style={{
@@ -661,7 +674,7 @@ export default function ProviderAppointments() {
                           🎯 Görüşme Başlat
                         </button>
                       )}
-                      
+
                       <button
                         style={{
                           background: "#eff6ff",
@@ -777,7 +790,7 @@ export default function ProviderAppointments() {
                   {formatTime(sessionAppt.startTime)}
                 </div>
               </div>
-              
+
               <div style={{ marginBottom: 16 }}>
                 <label
                   style={{
@@ -802,7 +815,7 @@ export default function ProviderAppointments() {
                   Bu özet görüşme başlatıldıktan sonra güncellenebilir
                 </div>
               </div>
-              
+
               <div
                 style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}
               >
@@ -835,7 +848,10 @@ export default function ProviderAppointments() {
                     padding: "10px 20px",
                     border: "none",
                     borderRadius: 8,
-                    cursor: sessionSummary.trim() && !startingSession ? "pointer" : "not-allowed",
+                    cursor:
+                      sessionSummary.trim() && !startingSession
+                        ? "pointer"
+                        : "not-allowed",
                     fontSize: 14,
                   }}
                   onClick={startSession}

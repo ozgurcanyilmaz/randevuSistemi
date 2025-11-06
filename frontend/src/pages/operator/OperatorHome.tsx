@@ -45,14 +45,16 @@ export default function OperatorHome() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | "">("");
   const [notes, setNotes] = useState("");
-  const [userQuery, setUserQuery] = useState(""); 
+  const [userQuery, setUserQuery] = useState("");
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [userHighlight, setUserHighlight] = useState(-1);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"approvals" | "create">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "create">(
+    "approvals"
+  );
 
   async function search() {
     setLoading(true);
@@ -91,7 +93,9 @@ export default function OperatorHome() {
 
   async function loadProviders(id: number) {
     try {
-      const { data } = await api.get<Provider[]>(`/user/branches/${id}/providers`);
+      const { data } = await api.get<Provider[]>(
+        `/user/branches/${id}/providers`
+      );
       setProviders(data);
     } catch {
       setError("İlgililer yüklenemedi");
@@ -108,7 +112,10 @@ export default function OperatorHome() {
         params: { date: d },
       });
       setSlots(
-        data.map((x: any) => ({ start: x.start || x.Start, end: x.end || x.End }))
+        data.map((x: any) => ({
+          start: x.start || x.Start,
+          end: x.end || x.End,
+        }))
       );
     } catch {
       setError("Müsait saatler yüklenemedi");
@@ -150,7 +157,7 @@ export default function OperatorHome() {
 
   useEffect(() => {
     loadDepartments();
-    setUserQuery(""); 
+    setUserQuery("");
   }, []);
 
   useEffect(() => {
@@ -234,7 +241,8 @@ export default function OperatorHome() {
                 fontSize: "14px",
                 cursor: "pointer",
                 border: "none",
-                background: activeTab === "approvals" ? "#eff6ff" : "transparent",
+                background:
+                  activeTab === "approvals" ? "#eff6ff" : "transparent",
                 color: activeTab === "approvals" ? "#1d4ed8" : "#64748b",
                 borderBottom:
                   activeTab === "approvals" ? "2px solid #2563eb" : "none",
@@ -425,7 +433,9 @@ export default function OperatorHome() {
                         <th style={thStyle}>⏰ Bitiş</th>
                         <th style={thStyle}>👤 Kullanıcı</th>
                         <th style={thStyle}>Durum</th>
-                        <th style={{ ...thStyle, textAlign: "right" }}>İşlem</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>
+                          İşlem
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -459,7 +469,9 @@ export default function OperatorHome() {
                             <td style={tdStyle}>{i.startTime}</td>
                             <td style={tdStyle}>{i.endTime}</td>
                             <td style={tdStyle}>{i.user}</td>
-                            <td style={{ padding: "16px 24px", fontSize: "14px" }}>
+                            <td
+                              style={{ padding: "16px 24px", fontSize: "14px" }}
+                            >
                               {i.checkedInAt ? (
                                 <span style={pillOk}>✓ Onaylandı</span>
                               ) : (
@@ -478,10 +490,12 @@ export default function OperatorHome() {
                                   style={btnApprove}
                                   onClick={() => checkIn(i.id)}
                                   onMouseOver={(e) =>
-                                    (e.currentTarget.style.background = "#15803d")
+                                    (e.currentTarget.style.background =
+                                      "#15803d")
                                   }
                                   onMouseOut={(e) =>
-                                    (e.currentTarget.style.background = "#16a34a")
+                                    (e.currentTarget.style.background =
+                                      "#16a34a")
                                   }
                                 >
                                   Onayla
@@ -586,7 +600,10 @@ export default function OperatorHome() {
                   />
                 </div>
 
-                <div id="user-autocomplete-root" style={{ position: "relative" }}>
+                <div
+                  id="user-autocomplete-root"
+                  style={{ position: "relative" }}
+                >
                   <label style={labelStyle}>Kullanıcı</label>
 
                   <input
@@ -600,7 +617,8 @@ export default function OperatorHome() {
                       setUserHighlight(-1);
                     }}
                     onFocus={() => {
-                      if ((userQuery?.trim().length || 0) >= 2) setUserMenuOpen(true);
+                      if ((userQuery?.trim().length || 0) >= 2)
+                        setUserMenuOpen(true);
                     }}
                     onKeyDown={(e) => {
                       if (!userMenuOpen || users.length === 0) return;
@@ -609,7 +627,9 @@ export default function OperatorHome() {
                         setUserHighlight((h) => (h + 1) % users.length);
                       } else if (e.key === "ArrowUp") {
                         e.preventDefault();
-                        setUserHighlight((h) => (h - 1 + users.length) % users.length);
+                        setUserHighlight(
+                          (h) => (h - 1 + users.length) % users.length
+                        );
                       } else if (e.key === "Enter") {
                         e.preventDefault();
                         const u = users[userHighlight] ?? users[0];
@@ -643,7 +663,13 @@ export default function OperatorHome() {
                       }}
                     >
                       {users.length === 0 ? (
-                        <div style={{ padding: "10px 12px", color: "#94a3b8", fontSize: 14 }}>
+                        <div
+                          style={{
+                            padding: "10px 12px",
+                            color: "#94a3b8",
+                            fontSize: 14,
+                          }}
+                        >
                           Sonuç yok
                         </div>
                       ) : (
@@ -659,14 +685,19 @@ export default function OperatorHome() {
                               padding: "10px 12px",
                               fontSize: 14,
                               cursor: "pointer",
-                              background: idx === userHighlight ? "#eff6ff" : "white",
-                              color: idx === userHighlight ? "#1d4ed8" : "#0f172a",
+                              background:
+                                idx === userHighlight ? "#eff6ff" : "white",
+                              color:
+                                idx === userHighlight ? "#1d4ed8" : "#0f172a",
                               borderBottom: "1px solid #f1f5f9",
                             }}
                           >
                             {u.fullName || u.email}
                             {u.fullName && (
-                              <span style={{ color: "#94a3b8" }}> — {u.email}</span>
+                              <span style={{ color: "#94a3b8" }}>
+                                {" "}
+                                — {u.email}
+                              </span>
                             )}
                           </div>
                         ))
@@ -675,7 +706,9 @@ export default function OperatorHome() {
                   )}
 
                   {(!userQuery || userQuery.trim().length < 2) && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: "#94a3b8" }}>
+                    <div
+                      style={{ marginTop: 6, fontSize: 12, color: "#94a3b8" }}
+                    >
                       En az 2 karakter yazın
                     </div>
                   )}
@@ -694,7 +727,9 @@ export default function OperatorHome() {
               </div>
 
               {/* Slotlar */}
-              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}>
+              <div
+                style={{ borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}
+              >
                 <h3
                   style={{
                     fontSize: "14px",
@@ -719,7 +754,8 @@ export default function OperatorHome() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(140px, 1fr))",
                       gap: "12px",
                     }}
                   >
@@ -732,7 +768,10 @@ export default function OperatorHome() {
                           color: "#1e40af",
                           borderRadius: "8px",
                           background: "white",
-                          cursor: !providerId || !slotDate ? "not-allowed" : "pointer",
+                          cursor:
+                            !providerId || !slotDate
+                              ? "not-allowed"
+                              : "pointer",
                           fontWeight: "500",
                           fontSize: "14px",
                           transition: "all 0.2s",

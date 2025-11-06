@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 type Session = {
   id: number;
@@ -55,7 +55,8 @@ export default function ProviderSessions() {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
 
-  const [selectedSession, setSelectedSession] = useState<SessionDetailResponse | null>(null);
+  const [selectedSession, setSelectedSession] =
+    useState<SessionDetailResponse | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -114,19 +115,27 @@ export default function ProviderSessions() {
 
   const getStatusText = (status: number) => {
     switch (status) {
-      case 0: return "Devam Ediyor";
-      case 1: return "Tamamlandı";
-      case 2: return "İptal Edildi";
-      default: return "Bilinmiyor";
+      case 0:
+        return "Devam Ediyor";
+      case 1:
+        return "Tamamlandı";
+      case 2:
+        return "İptal Edildi";
+      default:
+        return "Bilinmiyor";
     }
   };
 
   const getStatusColor = (status: number) => {
     switch (status) {
-      case 0: return { bg: "#fef3c7", fg: "#92400e" };
-      case 1: return { bg: "#dbeafe", fg: "#1e40af" };
-      case 2: return { bg: "#fee2e2", fg: "#991b1b" };
-      default: return { bg: "#e5e7eb", fg: "#374151" };
+      case 0:
+        return { bg: "#fef3c7", fg: "#92400e" };
+      case 1:
+        return { bg: "#dbeafe", fg: "#1e40af" };
+      case 2:
+        return { bg: "#fee2e2", fg: "#991b1b" };
+      default:
+        return { bg: "#e5e7eb", fg: "#374151" };
     }
   };
 
@@ -150,9 +159,10 @@ export default function ProviderSessions() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return dataForTab;
-    return dataForTab.filter((sess) =>
-      sess.userName.toLowerCase().includes(s) ||
-      sess.summary.toLowerCase().includes(s)
+    return dataForTab.filter(
+      (sess) =>
+        sess.userName.toLowerCase().includes(s) ||
+        sess.summary.toLowerCase().includes(s)
     );
   }, [dataForTab, q]);
 
@@ -160,7 +170,9 @@ export default function ProviderSessions() {
     setLoadingDetail(true);
     setError(null);
     try {
-      const { data } = await api.get<SessionDetailResponse>(`/provider/sessions/${id}`);
+      const { data } = await api.get<SessionDetailResponse>(
+        `/provider/sessions/${id}`
+      );
       setSelectedSession(data);
       setEditingSummary(data.summary);
       setEditingNotes(data.notes || "");
@@ -232,8 +244,9 @@ export default function ProviderSessions() {
 
   async function cancelSession() {
     if (!selectedSession) return;
-    if (!confirm("Bu görüşmeyi iptal etmek istediğinizden emin misiniz?")) return;
-    
+    if (!confirm("Bu görüşmeyi iptal etmek istediğinizden emin misiniz?"))
+      return;
+
     setError(null);
     try {
       await api.post(`/provider/sessions/${selectedSession.id}/cancel`);
@@ -331,7 +344,8 @@ export default function ProviderSessions() {
                 border: "none",
                 background: activeTab === "all" ? "#eff6ff" : "transparent",
                 color: activeTab === "all" ? "#1d4ed8" : "#64748b",
-                borderBottom: activeTab === "all" ? "2px solid #2563eb" : "none",
+                borderBottom:
+                  activeTab === "all" ? "2px solid #2563eb" : "none",
                 transition: "all 0.2s",
               }}
             >
@@ -546,9 +560,13 @@ export default function ProviderSessions() {
                         color: "#64748b",
                       }}
                     >
-                      <span>🕐 Başlangıç: {formatDateTime(sess.startedAt)}</span>
+                      <span>
+                        🕐 Başlangıç: {formatDateTime(sess.startedAt)}
+                      </span>
                       {sess.completedAt && (
-                        <span>✓ Tamamlanma: {formatDateTime(sess.completedAt)}</span>
+                        <span>
+                          ✓ Tamamlanma: {formatDateTime(sess.completedAt)}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -570,7 +588,9 @@ export default function ProviderSessions() {
               zIndex: 1000,
               padding: 24,
             }}
-            onClick={() => !updating && !completing && setShowDetailModal(false)}
+            onClick={() =>
+              !updating && !completing && setShowDetailModal(false)
+            }
           >
             <div
               style={{
@@ -867,9 +887,11 @@ export default function ProviderSessions() {
               >
                 Görüşmeyi Tamamla
               </h2>
-              <p style={{ color: "#64748b", marginBottom: 24, lineHeight: 1.6 }}>
-                Bu görüşmeyi tamamlamak istediğinizden emin misiniz? Tamamlandıktan
-                sonra görüşme bilgileri düzenlenemez.
+              <p
+                style={{ color: "#64748b", marginBottom: 24, lineHeight: 1.6 }}
+              >
+                Bu görüşmeyi tamamlamak istediğinizden emin misiniz?
+                Tamamlandıktan sonra görüşme bilgileri düzenlenemez.
               </p>
               <div
                 style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}

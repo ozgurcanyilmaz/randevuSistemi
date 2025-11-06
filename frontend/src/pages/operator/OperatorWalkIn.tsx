@@ -84,8 +84,10 @@ export default function OperatorWalkIn() {
         notes,
       });
 
-      setSuccess(`${response.data.userFullName} için walk-in randevu başarıyla oluşturuldu ve onaylandı!`);
-      
+      setSuccess(
+        `${response.data.userFullName} için walk-in randevu başarıyla oluşturuldu ve onaylandı!`
+      );
+
       setFullName("");
       setTcKimlikNo("");
       setPhoneNumber("");
@@ -94,7 +96,7 @@ export default function OperatorWalkIn() {
       setHeightCm("");
       setWeightKg("");
       setNotes("");
-      
+
       setTimeout(() => setSuccess(null), 5000);
     } catch (e: any) {
       const msg = e?.response?.data ?? "Randevu oluşturulamadı";
@@ -152,7 +154,8 @@ export default function OperatorWalkIn() {
             Walk-in Randevu
           </h1>
           <p style={{ color: "#64748b" }}>
-            Randevusuz gelen kullanıcılar için hızlı randevu oluşturun. Kullanıcı otomatik olarak bekleyen listesine eklenecektir.
+            Randevusuz gelen kullanıcılar için hızlı randevu oluşturun.
+            Kullanıcı otomatik olarak bekleyen listesine eklenecektir.
           </p>
         </div>
 
@@ -381,7 +384,9 @@ export default function OperatorWalkIn() {
                     placeholder="175"
                     value={heightCm}
                     onChange={(e) =>
-                      setHeightCm(e.target.value === "" ? "" : Number(e.target.value))
+                      setHeightCm(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
                     }
                   />
                 </div>
@@ -409,7 +414,9 @@ export default function OperatorWalkIn() {
                     placeholder="70"
                     value={weightKg}
                     onChange={(e) =>
-                      setWeightKg(e.target.value === "" ? "" : Number(e.target.value))
+                      setWeightKg(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
                     }
                   />
                 </div>
@@ -527,7 +534,8 @@ export default function OperatorWalkIn() {
                 </select>
                 {!!selectedProvider && (
                   <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
-                    ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes} dk
+                    ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes}{" "}
+                    dk
                   </div>
                 )}
               </div>
@@ -586,7 +594,9 @@ export default function OperatorWalkIn() {
                   lineHeight: 1.5,
                 }}
               >
-                💡 <strong>Not:</strong> Walk-in randevu otomatik olarak bugünün tarihi ve şu anki saat ile oluşturulacak ve kullanıcı bekleyen listesine eklenecektir.
+                💡 <strong>Not:</strong> Walk-in randevu otomatik olarak bugünün
+                tarihi ve şu anki saat ile oluşturulacak ve kullanıcı bekleyen
+                listesine eklenecektir.
               </div>
 
               <button
