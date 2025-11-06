@@ -6,7 +6,6 @@ import AppLayout from './components/AppLayout'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
-import ProfilePage from './pages/Profile'
 //admin
 import Admin from './pages/admin/Admin'
 import Departments from './pages/admin/Departments'
@@ -22,6 +21,7 @@ import ProviderWaiting from './pages/provider/ProviderWaiting'
 //user
 import UserAppointments from './pages/user/UserAppointments'
 import UserHome from './pages/user/UserHome'
+import ProfilePage from './pages/user/Profile'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
@@ -38,6 +38,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
         <Route path="/" element={<PrivateRoute><AppLayout><UserHome /></AppLayout></PrivateRoute>} />
         <Route path="/my-appointments" element={<PrivateRoute><AppLayout><UserAppointments /></AppLayout></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><AppLayout><ProfilePage /></AppLayout></PrivateRoute>} />

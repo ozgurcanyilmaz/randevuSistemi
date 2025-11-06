@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 type Profile = {
   email: string;
