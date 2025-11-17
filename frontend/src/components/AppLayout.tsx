@@ -384,7 +384,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       }
                     >
                       <i className="nav-icon fas fa-users" />
-                      <p>Bekleyen Kullanıcılar</p>
+                      <p>Bekleyen Ziyaretçiler</p>
                     </NavLink>
                   </li>
                 </>

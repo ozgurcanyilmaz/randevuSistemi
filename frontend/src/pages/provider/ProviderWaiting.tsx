@@ -177,7 +177,7 @@ export default function ProviderWaiting() {
               marginBottom: "8px",
             }}
           >
-            Bekleyen Kullanıcılar
+            Bekleyen Ziyaretçiler
           </h1>
           <p style={{ color: "#64748b" }}>
             Check-in yapmış ve yaklaşan randevuları olan kullanıcıları
