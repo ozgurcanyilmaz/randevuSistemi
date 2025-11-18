@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import ReCAPTCHA from "react-google-recaptcha";
 import { register as registerUser } from "../services/auth";
 import {
   registerSchema,
   type RegisterFormData,
 } from "../schemas/validationSchemas";
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
 export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const {
     register,
@@ -26,14 +30,22 @@ export default function Register() {
   async function onSubmit(data: RegisterFormData) {
     if (isSubmitting) return;
     setError(null);
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setError("Lütfen 'Robot değilim' kutucuğunu işaretleyin");
+      return;
+    }
+
     try {
       const fullName = (data.fullName ?? "").trim();
       const email = data.email.trim();
       const password = data.password;
-      await registerUser(email, password, fullName);
+      await registerUser(email, password, fullName, recaptchaToken);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 800);
     } catch (err: any) {
+      recaptchaRef.current?.reset();
       const msg =
         err?.response?.data?.message ||
         "Kayıt başarısız. Bu email zaten kullanılıyor olabilir.";
@@ -135,6 +147,14 @@ export default function Register() {
                   {errors.password.message}
                 </div>
               )}
+            </div>
+
+            <div className="mb-3 d-flex justify-content-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                theme="light"
+              />
             </div>
 
             <button

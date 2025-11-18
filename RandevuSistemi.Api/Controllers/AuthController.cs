@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using RandevuSistemi.Api.Models;
+using RandevuSistemi.Api.Services;
 
 namespace RandevuSistemi.Api.Controllers
 {
@@ -16,28 +17,52 @@ namespace RandevuSistemi.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _config;
+        private readonly IReCaptchaService _reCaptchaService;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration config)
+        public AuthController(
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            IConfiguration config,
+            IReCaptchaService reCaptchaService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _config = config;
+            _reCaptchaService = reCaptchaService;
         }
 
-        public record RegisterRequest(string Email, string Password, string? FullName);
-        public record LoginRequest(string Email, string Password);
+        public record RegisterRequest(string Email, string Password, string? FullName, string? RecaptchaToken);
+        public record LoginRequest(string Email, string Password, string? RecaptchaToken);
         public record AuthResponse(string Token, string Email, IEnumerable<string> Roles);
 
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            var user = new ApplicationUser { UserName = request.Email, Email = request.Email, FullName = request.FullName };
+            if (string.IsNullOrWhiteSpace(request.RecaptchaToken))
+            {
+                return BadRequest(new { message = "CAPTCHA doðrulamasý gereklidir" });
+            }
+
+            var isValidCaptcha = await _reCaptchaService.VerifyTokenAsync(request.RecaptchaToken);
+            if (!isValidCaptcha)
+            {
+                return BadRequest(new { message = "CAPTCHA doðrulamasý baþarýsýz" });
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = request.Email,
+                Email = request.Email,
+                FullName = request.FullName
+            };
+
             var result = await _userManager.CreateAsync(user, request.Password);
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
+
             await _userManager.AddToRoleAsync(user, "User");
             return Ok();
         }
@@ -46,6 +71,17 @@ namespace RandevuSistemi.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.RecaptchaToken))
+            {
+                return BadRequest(new { message = "CAPTCHA doðrulamasý gereklidir" });
+            }
+
+            var isValidCaptcha = await _reCaptchaService.VerifyTokenAsync(request.RecaptchaToken);
+            if (!isValidCaptcha)
+            {
+                return BadRequest(new { message = "CAPTCHA doðrulamasý baþarýsýz" });
+            }
+
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null) return Unauthorized();
 
@@ -84,28 +120,3 @@ namespace RandevuSistemi.Api.Controllers
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

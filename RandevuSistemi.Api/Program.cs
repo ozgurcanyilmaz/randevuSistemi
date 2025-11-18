@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using RandevuSistemi.Api.Data;
 using RandevuSistemi.Api.Models;
+using RandevuSistemi.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+builder.Services.AddHttpClient<IReCaptchaService, ReCaptchaService>();
 
 builder.Services.AddControllers().AddJsonOptions(o =>
 {

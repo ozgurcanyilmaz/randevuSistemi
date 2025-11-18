@@ -1,37 +1,70 @@
-.vs/
-*.user
-*.suo
-*.dbmdl
+# System
+.DS_Store
+Thumbs.db
+
+# Logs / temp
 *.log
-*.sqlite
-*.sqlite3
+*.tmp
+*.pid
+*.svclog
+*.localhistory/
+*.ide
 
-bin/
-obj/
-Debug/
-Release/
-
-*.Publish.xml
-*.pubxml
-*.PublishSettings
-
-.idea/
-.vscode/
-*.sln.iml
-
-packages/
+# Node
 node_modules/
 npm-debug.log*
-yarn-debug.log*
 yarn-error.log*
 
+# Build artifacts
+dist/
+build/
+out/
+
+# Env files
 .env
-.env.local
-.env.development
-.env.production
+.env.*
+frontend/.env
+frontend/.env.*
 
-Thumbs.db
-.DS_Store
+# Build artifacts
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
 
-tmp/
-temp/
+# User-specific Visual Studio/VSCode files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Temp DB/cache files created by OmniSharp / VSCode
+*.db
+*.db-shm
+*.db-wal
+*.cache
+*.vscode
+*.sqlite
+
+# .NET publish outputs
+**/publish/
+**/wwwroot/lib/
+
+# Local development settings
+RandevuSistemi.Api/appsettings.json
+RandevuSistemi.Api/appsettings.Development.json
+RandevuSistemi.Api/appsettings.Local.json
+
+# Launch settings
+RandevuSistemi.Api/Properties/launchSettings.json
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# VS backup files
+*.bak
+
+# Ignore Git conflict backups
+*.orig
+

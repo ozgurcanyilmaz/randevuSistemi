@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import ReCAPTCHA from "react-google-recaptcha";
 import { login, getRoles } from "../services/auth";
 import { loginSchema, type LoginFormData } from "../schemas/validationSchemas";
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const {
     register,
@@ -22,16 +26,26 @@ export default function Login() {
   async function onSubmit(data: LoginFormData) {
     if (isSubmitting) return;
     setError(null);
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setError("Lütfen 'Robot değilim' kutucuğunu işaretleyin");
+      return;
+    }
+
     try {
       const email = data.email.trim();
       const password = data.password;
-      await login(email, password);
+      await login(email, password, recaptchaToken);
+
       const roles = getRoles();
       if (roles.includes("Admin")) return navigate("/admin");
       if (roles.includes("Operator")) return navigate("/operator");
-      if (roles.includes("ServiceProvider")) return navigate("/provider/appointments");
+      if (roles.includes("ServiceProvider"))
+        return navigate("/provider/appointments");
       return navigate("/");
     } catch (err: any) {
+      recaptchaRef.current?.reset();
       const msg =
         err?.response?.data?.message ||
         "Giriş başarısız. Email veya şifrenizi kontrol ediniz.";
@@ -110,6 +124,14 @@ export default function Login() {
                   {errors.password.message}
                 </div>
               )}
+            </div>
+
+            <div className="mb-3 d-flex justify-content-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                theme="light"
+              />
             </div>
 
             <button
