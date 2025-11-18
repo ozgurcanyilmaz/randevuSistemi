@@ -20,9 +20,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      logout();
-      window.location.replace("/login");
-      return Promise.reject(error);
+      const currentPath = window.location.pathname;
+      const isLoginPage =
+        currentPath === "/login" || currentPath === "/register";
+      const hasToken = !!localStorage.getItem("token");
+
+      if (!isLoginPage && hasToken) {
+        logout();
+        window.location.replace("/login");
+      }
     }
     return Promise.reject(error);
   }
