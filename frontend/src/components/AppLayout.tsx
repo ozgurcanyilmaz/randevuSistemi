@@ -293,6 +293,21 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <>
                   <li className="nav-header">Operatör</li>
 
+                  <li className="nav-item">
+                    <NavLink
+                      to="/operator/dashboard"
+                      end
+                      className={({ isActive }) =>
+                        `nav-link${
+                          isActive || operatorRootActive ? " active" : ""
+                        }`
+                      }
+                    >
+                      <i className="nav-icon fas fa-tachometer-alt" />
+                      <p>Operatör Özeti</p>
+                    </NavLink>
+                  </li>
+
                   <li
                     className={`nav-item has-treeview ${
                       openOperatorAppt ? "menu-open" : ""

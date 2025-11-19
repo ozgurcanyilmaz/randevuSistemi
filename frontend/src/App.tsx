@@ -22,6 +22,7 @@ import ProviderWaiting from './pages/provider/ProviderWaiting'
 import UserAppointments from './pages/user/UserAppointments'
 import UserHome from './pages/user/UserHome'
 import ProfilePage from './pages/user/Profile'
+import OperatorDashboard from './pages/operator/OperatorDashboard'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/admin/roles/assign-provider" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
         
         <Route path="/operator" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/operator/dashboard" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorDashboard /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/appointments" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/appointments/create" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/walk-in" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorWalkIn /></AppLayout></RoleRoute></PrivateRoute>} />

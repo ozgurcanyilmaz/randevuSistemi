@@ -40,7 +40,7 @@ export default function Login() {
 
       const roles = getRoles();
       if (roles.includes("Admin")) return navigate("/admin");
-      if (roles.includes("Operator")) return navigate("/operator");
+      if (roles.includes("Operator")) return navigate("/operator/dashboard");
       if (roles.includes("ServiceProvider"))
         return navigate("/provider/appointments");
       return navigate("/");

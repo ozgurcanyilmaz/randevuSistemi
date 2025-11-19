@@ -21,6 +21,127 @@ namespace RandevuSistemi.Api.Controllers
             _userManager = userManager;
         }
 
+        [HttpGet("dashboard")]
+        public async Task<IActionResult> GetDashboard()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+            var startOfMonth = new DateOnly(today.Year, today.Month, 1);
+
+            // Today's stats
+            var todayAppointments = await _db.Appointments
+                .Where(a => a.Date == today)
+                .ToListAsync();
+
+            var todayCheckedIn = todayAppointments.Count(a => a.CheckedInAt != null);
+            var todayPending = todayAppointments.Count(a => a.CheckedInAt == null);
+
+            // This week's stats
+            var weekAppointments = await _db.Appointments
+                .Where(a => a.Date >= startOfWeek && a.Date <= today)
+                .ToListAsync();
+
+            var weekCheckedIn = weekAppointments.Count(a => a.CheckedInAt != null);
+            var weekTotal = weekAppointments.Count;
+
+            // This month's stats
+            var monthAppointments = await _db.Appointments
+                .Where(a => a.Date >= startOfMonth && a.Date <= today)
+                .ToListAsync();
+
+            var monthCheckedIn = monthAppointments.Count(a => a.CheckedInAt != null);
+            var monthTotal = monthAppointments.Count;
+
+            // Provider stats for today
+            var providerStats = await _db.Appointments
+                .Where(a => a.Date == today)
+                .Include(a => a.ServiceProvider)
+                    .ThenInclude(sp => sp.User)
+                .Include(a => a.ServiceProvider)
+                    .ThenInclude(sp => sp.Branch)
+                .GroupBy(a => new
+                {
+                    ProviderId = a.ServiceProviderProfileId,
+                    ProviderName = a.ServiceProvider.User.FullName ?? a.ServiceProvider.User.Email,
+                    BranchName = a.ServiceProvider.Branch.Name
+                })
+                .Select(g => new
+                {
+                    g.Key.ProviderId,
+                    g.Key.ProviderName,
+                    g.Key.BranchName,
+                    Total = g.Count(),
+                    CheckedIn = g.Count(a => a.CheckedInAt != null),
+                    Pending = g.Count(a => a.CheckedInAt == null)
+                })
+                .OrderByDescending(x => x.Total)
+                .ToListAsync();
+
+            // Recent check-ins (last 10)
+            var recentCheckIns = await _db.Appointments
+                .Where(a => a.CheckedInAt != null && a.Date == today)
+                .Include(a => a.User)
+                .Include(a => a.ServiceProvider)
+                    .ThenInclude(sp => sp.Branch)
+                .OrderByDescending(a => a.CheckedInAt)
+                .Take(10)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.Date,
+                    a.StartTime,
+                    a.EndTime,
+                    UserName = a.User.FullName ?? a.User.Email,
+                    BranchName = a.ServiceProvider.Branch.Name,
+                    a.CheckedInAt
+                })
+                .ToListAsync();
+
+            // Hourly distribution for today
+            var hourlyStats = todayAppointments
+                .GroupBy(a => a.StartTime.Hour)
+                .Select(g => new
+                {
+                    Hour = g.Key,
+                    Count = g.Count(),
+                    CheckedIn = g.Count(a => a.CheckedInAt != null)
+                })
+                .OrderBy(x => x.Hour)
+                .ToList();
+
+            return Ok(new
+            {
+                Today = new
+                {
+                    Total = todayAppointments.Count,
+                    CheckedIn = todayCheckedIn,
+                    Pending = todayPending,
+                    CheckInRate = todayAppointments.Count > 0
+                        ? Math.Round((double)todayCheckedIn / todayAppointments.Count * 100, 1)
+                        : 0
+                },
+                Week = new
+                {
+                    Total = weekTotal,
+                    CheckedIn = weekCheckedIn,
+                    CheckInRate = weekTotal > 0
+                        ? Math.Round((double)weekCheckedIn / weekTotal * 100, 1)
+                        : 0
+                },
+                Month = new
+                {
+                    Total = monthTotal,
+                    CheckedIn = monthCheckedIn,
+                    CheckInRate = monthTotal > 0
+                        ? Math.Round((double)monthCheckedIn / monthTotal * 100, 1)
+                        : 0
+                },
+                ProviderStats = providerStats,
+                RecentCheckIns = recentCheckIns,
+                HourlyStats = hourlyStats
+            });
+        }
+
         [HttpGet("appointments/search")]
         public async Task<IActionResult> SearchAppointments([FromQuery] string? name, [FromQuery] DateOnly? date)
         {
@@ -196,7 +317,7 @@ namespace RandevuSistemi.Api.Controllers
                 StartTime = startTime,
                 EndTime = endTime,
                 Notes = req.Notes ?? "Walk-in randevu",
-                CheckedInAt = now 
+                CheckedInAt = now
             };
             _db.Appointments.Add(appt);
             await _db.SaveChangesAsync();
