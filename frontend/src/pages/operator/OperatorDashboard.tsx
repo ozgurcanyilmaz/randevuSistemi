@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 type DashboardData = {
   today: {
@@ -47,6 +57,8 @@ export default function OperatorDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllProviders, setShowAllProviders] = useState(false);
+  const [showAllCheckIns, setShowAllCheckIns] = useState(false);
   const navigate = useNavigate();
 
   async function load() {
@@ -129,6 +141,67 @@ export default function OperatorDashboard() {
       </div>
     );
   }
+
+  const displayedProviders = showAllProviders
+    ? data.providerStats
+    : data.providerStats.slice(0, 5);
+
+  const displayedCheckIns = showAllCheckIns
+    ? data.recentCheckIns
+    : data.recentCheckIns.slice(0, 3);
+
+  const chartData = displayedProviders.map((p) => ({
+    name:
+      p.providerName.length > 20
+        ? p.providerName.substring(0, 18) + "..."
+        : p.providerName,
+    fullName: p.providerName,
+    "Check-in": p.checkedIn,
+    Bekleyen: p.pending,
+    total: p.total,
+    branch: p.branchName,
+  }));
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div
+          style={{
+            background: "white",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            padding: 12,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+            {data.fullName}
+          </div>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 4 }}>
+            🏪 {data.branch}
+          </div>
+          <div style={{ fontSize: 13, color: "#16a34a", marginBottom: 2 }}>
+            ✓ Check-in: {data["Check-in"]}
+          </div>
+          <div style={{ fontSize: 13, color: "#f59e0b", marginBottom: 2 }}>
+            ⏳ Bekleyen: {data["Bekleyen"]}
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#1e293b",
+              marginTop: 4,
+            }}
+          >
+            📊 Toplam: {data.total}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div
@@ -254,203 +327,213 @@ export default function OperatorDashboard() {
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-            gap: "24px",
+            background: "white",
+            borderRadius: "12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            border: "1px solid #e2e8f0",
+            overflow: "hidden",
             marginBottom: "24px",
           }}
         >
           <div
             style={{
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #e2e8f0",
-              overflow: "hidden",
+              padding: "16px 20px",
+              borderBottom: "1px solid #f1f5f9",
+              background: "#f8fafc",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <div
+            <h2
               style={{
-                padding: "16px 20px",
-                borderBottom: "1px solid #f1f5f9",
-                background: "#f8fafc",
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#1e293b",
+                margin: 0,
               }}
             >
-              <h2
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  margin: 0,
-                }}
-              >
-                👥 Bugün İlgili Başına Ziyaretçi
-              </h2>
-            </div>
-
-            {data.providerStats.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "32px 20px",
-                  color: "#94a3b8",
-                  background: "white",
-                }}
-              >
-                Bugün için randevu bulunmuyor.
-              </div>
-            ) : (
-              <div>
-                {data.providerStats.map((stat, index) => (
-                  <div
-                    key={stat.providerId}
-                    style={{
-                      padding: "16px 20px",
-                      borderBottom:
-                        index < data.providerStats.length - 1
-                          ? "1px solid #f1f5f9"
-                          : "none",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.background = "#f8fafc")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.background = "white")
-                    }
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "#0f172a",
-                            fontSize: "14px",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          {stat.providerName}
-                        </div>
-                        <div style={{ color: "#64748b", fontSize: "12px" }}>
-                          🏪 {stat.branchName}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "4px 10px",
-                            borderRadius: "9999px",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            background: "#e0e7ff",
-                            color: "#3730a3",
-                          }}
-                        >
-                          Toplam: {stat.total}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "4px 10px",
-                          borderRadius: "9999px",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                          background: "#dcfce7",
-                          color: "#166534",
-                        }}
-                      >
-                        ✓ {stat.checkedIn}
-                      </span>
-                      {stat.pending > 0 && (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "4px 10px",
-                            borderRadius: "9999px",
-                            fontSize: "11px",
-                            fontWeight: 500,
-                            background: "#fef3c7",
-                            color: "#92400e",
-                          }}
-                        >
-                          ⏳ {stat.pending}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+              📊 İlgililer - Bugünkü Randevular
+            </h2>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 12px",
+                borderRadius: 9999,
+                fontSize: 12,
+                fontWeight: 600,
+                background: "#dcfce7",
+                color: "#166534",
+              }}
+            >
+              {data.providerStats.length} ilgili
+            </span>
           </div>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #e2e8f0",
-              overflow: "hidden",
-            }}
-          >
+          {data.providerStats.length === 0 ? (
             <div
               style={{
-                padding: "16px 20px",
-                borderBottom: "1px solid #f1f5f9",
-                background: "#f8fafc",
+                textAlign: "center",
+                padding: "32px 20px",
+                color: "#94a3b8",
+                background: "white",
               }}
             >
-              <h2
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  margin: 0,
-                }}
-              >
-                ⏱️ Son Check-in'ler
-              </h2>
+              Bugün için randevu bulunmuyor.
             </div>
-
-            {data.recentCheckIns.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "32px 20px",
-                  color: "#94a3b8",
-                  background: "white",
-                }}
-              >
-                Bugün henüz check-in yapılmamış.
+          ) : (
+            <>
+              <div style={{ padding: 20 }}>
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(300, displayedProviders.length * 60)}
+                >
+                  <BarChart
+                    data={chartData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis
+                      type="number"
+                      stroke="#64748b"
+                      style={{ fontSize: 12 }}
+                      allowDecimals={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      stroke="#64748b"
+                      width={140}
+                      style={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      cursor={{ fill: "#f8fafc" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 13 }} iconType="circle" />
+                    <Bar
+                      dataKey="Check-in"
+                      stackId="a"
+                      fill="#16a34a"
+                      radius={[0, 0, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="Bekleyen"
+                      stackId="a"
+                      fill="#f59e0b"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            ) : (
-              <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-                {data.recentCheckIns.map((item, index) => (
+
+              {data.providerStats.length > 5 && (
+                <div
+                  style={{
+                    padding: "12px 20px",
+                    background: "#f8fafc",
+                    borderTop: "1px solid #f1f5f9",
+                    textAlign: "center",
+                  }}
+                >
+                  <button
+                    onClick={() => setShowAllProviders(!showAllProviders)}
+                    style={{
+                      background: "transparent",
+                      color: "#1d4ed8",
+                      fontWeight: 500,
+                      padding: "6px 12px",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#eff6ff";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    {showAllProviders
+                      ? "▲ Daha Az"
+                      : `▼ ${data.providerStats.length - 5} İlgili Daha`}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div
+          style={{
+            background: "white",
+            borderRadius: "12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            border: "1px solid #e2e8f0",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "16px 20px",
+              borderBottom: "1px solid #f1f5f9",
+              background: "#f8fafc",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#1e293b",
+                margin: 0,
+              }}
+            >
+              ⏱️ Son Check-in'ler
+            </h2>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "4px 12px",
+                borderRadius: 9999,
+                fontSize: 12,
+                fontWeight: 600,
+                background: "#dbeafe",
+                color: "#1e40af",
+              }}
+            >
+              Toplam: {data.recentCheckIns.length}
+            </span>
+          </div>
+
+          {data.recentCheckIns.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "32px 20px",
+                color: "#94a3b8",
+                background: "white",
+              }}
+            >
+              Bugün henüz check-in yapılmamış.
+            </div>
+          ) : (
+            <>
+              <div>
+                {displayedCheckIns.map((item, index) => (
                   <div
                     key={item.id}
                     style={{
                       padding: "14px 20px",
                       borderBottom:
-                        index < data.recentCheckIns.length - 1
+                        index < displayedCheckIns.length - 1
                           ? "1px solid #f1f5f9"
                           : "none",
                       transition: "background 0.2s",
@@ -474,8 +557,8 @@ export default function OperatorDashboard() {
                           style={{
                             fontWeight: 600,
                             color: "#0f172a",
-                            fontSize: "14px",
-                            marginBottom: "4px",
+                            fontSize: 14,
+                            marginBottom: 4,
                           }}
                         >
                           👤 {item.userName}
@@ -483,13 +566,13 @@ export default function OperatorDashboard() {
                         <div
                           style={{
                             color: "#64748b",
-                            fontSize: "12px",
-                            marginBottom: "4px",
+                            fontSize: 12,
+                            marginBottom: 4,
                           }}
                         >
                           🏪 {item.branchName}
                         </div>
-                        <div style={{ color: "#64748b", fontSize: "12px" }}>
+                        <div style={{ color: "#64748b", fontSize: 12 }}>
                           ⏰ {formatTime(item.startTime)} -{" "}
                           {formatTime(item.endTime)}
                         </div>
@@ -499,17 +582,17 @@ export default function OperatorDashboard() {
                           style={{
                             display: "inline-block",
                             padding: "4px 10px",
-                            borderRadius: "9999px",
-                            fontSize: "11px",
+                            borderRadius: 9999,
+                            fontSize: 11,
                             fontWeight: 600,
                             background: "#dcfce7",
                             color: "#166534",
-                            marginBottom: "4px",
+                            marginBottom: 4,
                           }}
                         >
                           ✓
                         </span>
-                        <div style={{ color: "#94a3b8", fontSize: "11px" }}>
+                        <div style={{ color: "#94a3b8", fontSize: 11 }}>
                           {formatDateTime(item.checkedInAt)}
                         </div>
                       </div>
@@ -517,8 +600,44 @@ export default function OperatorDashboard() {
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+
+              {data.recentCheckIns.length > 5 && (
+                <div
+                  style={{
+                    padding: "12px 20px",
+                    background: "#f8fafc",
+                    borderTop: "1px solid #f1f5f9",
+                    textAlign: "center",
+                  }}
+                >
+                  <button
+                    onClick={() => setShowAllCheckIns(!showAllCheckIns)}
+                    style={{
+                      background: "transparent",
+                      color: "#1d4ed8",
+                      fontWeight: 500,
+                      padding: "6px 12px",
+                      border: "none",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      fontSize: 13,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#eff6ff";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    {showAllCheckIns
+                      ? "▲ Daha Az"
+                      : `▼ ${data.recentCheckIns.length - 5} Check-in Daha`}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

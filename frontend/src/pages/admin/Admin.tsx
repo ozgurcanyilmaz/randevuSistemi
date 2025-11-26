@@ -75,7 +75,7 @@ export default function Admin() {
     [departments]
   );
 
-  const recentUsers = useMemo(() => users.slice(0, 8), [users]);
+  const recentUsers = useMemo(() => users.slice(0, 5), [users]);
 
   return (
     <div
@@ -308,7 +308,7 @@ export default function Admin() {
                 Henüz departman bulunmuyor.
               </div>
             ) : (
-              <div>
+              <div style={{ maxHeight: "400px", overflowY: "auto" }}>
                 {departments.map((d, index) => (
                   <div
                     key={d.id}
@@ -370,7 +370,7 @@ export default function Admin() {
                           gap: "8px",
                         }}
                       >
-                        {d.branches!.map((b) => (
+                        {d.branches!.slice(0, 3).map((b) => (
                           <span
                             key={b.id}
                             style={{
@@ -387,6 +387,22 @@ export default function Admin() {
                             📍 {b.name}
                           </span>
                         ))}
+                        {(d.branches!.length || 0) > 3 && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "4px 10px",
+                              borderRadius: "9999px",
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              background: "#fef2f2",
+                              color: "#dc2626",
+                            }}
+                          >
+                            +{d.branches!.length - 3} şube daha
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -504,7 +520,7 @@ export default function Admin() {
                     margin: 0,
                   }}
                 >
-                  👥 Kullanıcılar (Özet)
+                  👥 Son Kayıt Olan Kullanıcılar
                 </h2>
               </div>
 
@@ -548,6 +564,7 @@ export default function Admin() {
                           display: "flex",
                           gap: "6px",
                           flexWrap: "wrap",
+                          justifyContent: "flex-end",
                         }}
                       >
                         {u.roles?.length ? (
