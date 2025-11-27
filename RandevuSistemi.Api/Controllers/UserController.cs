@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RandevuSistemi.Api.Data;
 using RandevuSistemi.Api.Models;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 namespace RandevuSistemi.Api.Controllers
 {
@@ -13,9 +14,31 @@ namespace RandevuSistemi.Api.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public UserController(AppDbContext db)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public UserController(AppDbContext db, UserManager<ApplicationUser> userManager)
         {
             _db = db;
+            _userManager = userManager;
+        }
+
+        private async Task<bool> IsOperator()
+        {
+            if (!User.Identity?.IsAuthenticated ?? true) return false;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return false;
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return false;
+            return await _userManager.IsInRoleAsync(user, "Operator");
+        }
+
+        private async Task<OperatorProfile?> GetOperatorProfile()
+        {
+            if (!User.Identity?.IsAuthenticated ?? true) return null;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return null;
+            return await _db.OperatorProfiles
+                .Include(op => op.Branch)
+                .FirstOrDefaultAsync(op => op.UserId == userId);
         }
 
         [HttpGet("profile")]
@@ -47,7 +70,6 @@ namespace RandevuSistemi.Api.Controllers
             var u = await _db.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (u == null) return NotFound();
 
-            // Basic server-side validation
             if (!string.IsNullOrWhiteSpace(request.TcKimlikNo) && request.TcKimlikNo.Length != 11)
             {
                 return BadRequest("TC Kimlik No 11 haneli olmalıdır.");
@@ -73,7 +95,6 @@ namespace RandevuSistemi.Api.Controllers
                 return BadRequest("Telefon numarası en az 10 haneli olmalıdır.");
             }
 
-            // Require FullName to be set (either previously or via this request)
             var nextFullName = string.IsNullOrWhiteSpace(request.FullName) ? u.FullName : request.FullName;
             if (string.IsNullOrWhiteSpace(nextFullName))
             {
@@ -95,6 +116,34 @@ namespace RandevuSistemi.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetDepartments()
         {
+            if (await IsOperator())
+            {
+                var operatorProfile = await GetOperatorProfile();
+                if (operatorProfile == null)
+                {
+                    return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+                }
+
+                var branch = operatorProfile.Branch;
+                var department = await _db.Departments
+                    .Include(d => d.Branches)
+                    .FirstOrDefaultAsync(d => d.Id == branch.DepartmentId);
+
+                if (department == null)
+                {
+                    return NotFound("Department not found");
+                }
+
+                var filteredDepartment = new
+                {
+                    department.Id,
+                    department.Name,
+                    Branches = department.Branches.Where(b => b.Id == branch.Id).Select(b => new { b.Id, b.Name }).ToList()
+                };
+
+                return Ok(new[] { filteredDepartment });
+            }
+
             var data = await _db.Departments.Include(d => d.Branches).ToListAsync();
             return Ok(data);
         }
@@ -103,6 +152,20 @@ namespace RandevuSistemi.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetProvidersByBranch(int branchId)
         {
+            if (await IsOperator())
+            {
+                var operatorProfile = await GetOperatorProfile();
+                if (operatorProfile == null)
+                {
+                    return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+                }
+
+                if (operatorProfile.BranchId != branchId)
+                {
+                    return BadRequest("You can only access providers from your assigned branch.");
+                }
+            }
+
             var providers = await _db.ServiceProviderProfiles
                 .Include(p => p.User)
                 .Where(p => p.BranchId == branchId)
@@ -157,7 +220,6 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments")]
         public async Task<IActionResult> Book([FromBody] BookRequest req)
         {
-            // Disallow booking for past times on the same day
             var today = DateOnly.FromDateTime(DateTime.Now);
             if (req.Date == today)
             {
@@ -170,7 +232,6 @@ namespace RandevuSistemi.Api.Controllers
             var provider = await _db.ServiceProviderProfiles.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.Id == req.ProviderId);
             if (provider == null) return NotFound();
 
-            // Validate session duration
             var expected = TimeSpan.FromMinutes(provider.SessionDurationMinutes);
             var actual = req.End.ToTimeSpan() - req.Start.ToTimeSpan();
             if (actual != expected)
@@ -178,7 +239,6 @@ namespace RandevuSistemi.Api.Controllers
                 return BadRequest($"Invalid session length. Expected {provider.SessionDurationMinutes} minutes.");
             }
 
-            // Validate within working hours and not in breaks
             var workForDay = await _db.WorkingHours.Where(w => w.ServiceProviderProfileId == provider.Id && w.DayOfWeek == req.Date.DayOfWeek).ToListAsync();
             if (!workForDay.Any()) return BadRequest("Provider has no working hours on selected day.");
 
@@ -189,14 +249,12 @@ namespace RandevuSistemi.Api.Controllers
             bool overlapsBreak = breaksForDay.Any(b => !(req.End <= b.StartTime || req.Start >= b.EndTime));
             if (overlapsBreak) return BadRequest("Selected time overlaps a break period.");
 
-            // Validate not already taken
             bool conflict = provider.Appointments.Any(a => a.Date == req.Date && !(req.End <= a.StartTime || req.Start >= a.EndTime));
             if (conflict) return Conflict("Slot already taken");
 
             var userId = User.Identity?.IsAuthenticated == true ? User.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Value : null;
             if (userId == null) return Unauthorized();
 
-            // Enforce profile completeness before booking
             var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (user == null) return Unauthorized();
             bool profileComplete = !string.IsNullOrWhiteSpace(user.FullName)
@@ -238,12 +296,115 @@ namespace RandevuSistemi.Api.Controllers
                     a.StartTime,
                     a.EndTime,
                     ProviderId = a.ServiceProviderProfileId,
-                    BranchName = a.ServiceProvider.Branch.Name
+                    BranchName = a.ServiceProvider.Branch.Name,
+                    a.ProviderNotes
                 })
                 .ToListAsync();
             return Ok(appts);
         }
+
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetMySessions()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var sessions = await _db.Sessions
+                .Include(s => s.Appointment)
+                    .ThenInclude(a => a.ServiceProvider)
+                        .ThenInclude(sp => sp.Branch)
+                .Where(s => s.Appointment.UserId == userId && s.Status == SessionStatus.Completed)
+                .OrderByDescending(s => s.CompletedAt)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.AppointmentId,
+                    s.Summary,
+                    s.Notes,
+                    s.Outcome,
+                    s.ActionItems,
+                    s.NextSessionDate,
+                    s.NextSessionNotes,
+                    s.CompletedAt,
+                    Provider = new
+                    {
+                        Name = s.Appointment.ServiceProvider.User.FullName ?? s.Appointment.ServiceProvider.User.Email,
+                        BranchName = s.Appointment.ServiceProvider.Branch.Name
+                    },
+                    Appointment = new
+                    {
+                        Id = s.Appointment.Id,
+                        s.Appointment.Date,
+                        s.Appointment.StartTime,
+                        s.Appointment.EndTime
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(sessions);
+        }
+
+        [HttpGet("sessions/{id}")]
+        public async Task<IActionResult> GetSessionDetail(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var session = await _db.Sessions
+                .Include(s => s.Appointment)
+                    .ThenInclude(a => a.ServiceProvider)
+                        .ThenInclude(sp => sp.Branch)
+                .Where(s => s.Id == id
+                    && s.Appointment.UserId == userId
+                    && s.Status == SessionStatus.Completed)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Summary,
+                    s.Notes,
+                    s.Outcome,
+                    s.ActionItems,
+                    s.NextSessionDate,
+                    s.NextSessionNotes,
+                    s.CompletedAt,
+                    Provider = new
+                    {
+                        Name = s.Appointment.ServiceProvider.User.FullName ?? s.Appointment.ServiceProvider.User.Email,
+                        BranchName = s.Appointment.ServiceProvider.Branch.Name
+                    },
+                    Appointment = new
+                    {
+                        s.Appointment.Date,
+                        s.Appointment.StartTime,
+                        s.Appointment.EndTime
+                    }
+                })
+                .FirstOrDefaultAsync();
+
+            if (session == null) return NotFound("Session not found");
+            return Ok(session);
+        }
+
+        [HttpDelete("appointments/{id}")]
+        public async Task<IActionResult> CancelAppointment(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var appointment = await _db.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
+            if (appointment == null)
+                return NotFound("Randevu bulunamadı.");
+
+            var appointmentDateTime = appointment.Date.ToDateTime(appointment.StartTime);
+            if (appointmentDateTime < DateTime.Now)
+                return BadRequest("Geçmiş randevular iptal edilemez.");
+
+            _db.Appointments.Remove(appointment);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { Message = "Randevu başarıyla iptal edildi." });
+        }
     }
 }
-
-

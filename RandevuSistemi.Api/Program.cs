@@ -6,10 +6,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using RandevuSistemi.Api.Data;
 using RandevuSistemi.Api.Models;
+using RandevuSistemi.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -19,7 +19,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequireUppercase = false;
         options.Password.RequireLowercase = false;
-        options.Password.RequiredLength = 5; // allow 'admin'
+        options.Password.RequiredLength = 5;
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -48,7 +48,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// CORS for Vite dev server
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -56,6 +55,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+builder.Services.AddHttpClient<IReCaptchaService, ReCaptchaService>();
 
 builder.Services.AddControllers().AddJsonOptions(o =>
 {
@@ -91,7 +92,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Apply migrations and seed data on startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -100,12 +100,11 @@ using (var scope = app.Services.CreateScope())
     await SeedData.SeedAsync(services, builder.Configuration);
 }
 
-// Always enable Swagger UI and serve it at root for convenience
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "RandevuSistemi API v1");
-    c.RoutePrefix = string.Empty; // Swagger UI at '/'
+    c.RoutePrefix = string.Empty;
 });
 
 app.UseCors();

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RandevuSistemi.Api.Data;
@@ -11,9 +12,11 @@ using RandevuSistemi.Api.Data;
 namespace RandevuSistemi.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251103082734_AddSessionModel")]
+    partial class AddSessionModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -344,30 +347,6 @@ namespace RandevuSistemi.Api.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("RandevuSistemi.Api.Models.OperatorProfile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BranchId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BranchId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("OperatorProfiles");
-                });
-
             modelBuilder.Entity("RandevuSistemi.Api.Models.ServiceProviderProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -563,25 +542,6 @@ namespace RandevuSistemi.Api.Migrations
                     b.Navigation("ServiceProvider");
                 });
 
-            modelBuilder.Entity("RandevuSistemi.Api.Models.OperatorProfile", b =>
-                {
-                    b.HasOne("RandevuSistemi.Api.Models.Branch", "Branch")
-                        .WithMany("Operators")
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RandevuSistemi.Api.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Branch");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("RandevuSistemi.Api.Models.ServiceProviderProfile", b =>
                 {
                     b.HasOne("RandevuSistemi.Api.Models.Branch", "Branch")
@@ -625,8 +585,6 @@ namespace RandevuSistemi.Api.Migrations
 
             modelBuilder.Entity("RandevuSistemi.Api.Models.Branch", b =>
                 {
-                    b.Navigation("Operators");
-
                     b.Navigation("ServiceProviders");
                 });
 

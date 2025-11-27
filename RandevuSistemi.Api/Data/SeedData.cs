@@ -11,8 +11,7 @@ namespace RandevuSistemi.Api.Data
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-            // Roles
-            var roles = new[] { "Admin", "ServiceProvider", "User" };
+            var roles = new[] { "Admin", "Operator", "ServiceProvider", "User" };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -21,7 +20,6 @@ namespace RandevuSistemi.Api.Data
                 }
             }
 
-            // Default admin
             var adminEmail = "admin@gmail.com";
             var adminPassword = "admin";
             var admin = await userManager.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
@@ -40,27 +38,25 @@ namespace RandevuSistemi.Api.Data
                     await userManager.AddToRoleAsync(admin, "Admin");
                 }
             }
+
+            var operatorEmail = "operator@gmail.com";
+            var operatorPassword = "operator";
+            var operatorUser = await userManager.Users.FirstOrDefaultAsync(u => u.Email == operatorEmail);
+            if (operatorUser == null)
+            {
+                operatorUser = new ApplicationUser
+                {
+                    UserName = operatorEmail,
+                    Email = operatorEmail,
+                    EmailConfirmed = true,
+                    FullName = "System Operator"
+                };
+                var result = await userManager.CreateAsync(operatorUser, operatorPassword);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(operatorUser, "Operator");
+                }
+            }
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import ReCAPTCHA from "react-google-recaptcha";
 import { register as registerUser } from "../services/auth";
 import {
   registerSchema,
   type RegisterFormData,
 } from "../schemas/validationSchemas";
+import { Card, Alert, Button } from "../components/common";
+import { commonStyles, colors } from "../styles/commonStyles";
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const {
     register,
@@ -26,14 +32,22 @@ export default function Register() {
   async function onSubmit(data: RegisterFormData) {
     if (isSubmitting) return;
     setError(null);
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setError("Lütfen 'Robot değilim' kutucuğunu işaretleyin");
+      return;
+    }
+
     try {
       const fullName = (data.fullName ?? "").trim();
       const email = data.email.trim();
       const password = data.password;
-      await registerUser(email, password, fullName);
+      await registerUser(email, password, fullName, recaptchaToken);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 800);
     } catch (err: any) {
+      recaptchaRef.current?.reset();
       const msg =
         err?.response?.data?.message ||
         "Kayıt başarısız. Bu email zaten kullanılıyor olabilir.";
@@ -47,111 +61,139 @@ export default function Register() {
 
   return (
     <div
-      className="min-vh-100 d-flex align-items-center justify-content-center"
       style={{
-        background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-        padding: 24,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        ...commonStyles.pageContainer,
       }}
     >
-      <div
-        className="card shadow-sm border-0"
-        style={{
-          width: 440,
-          borderRadius: 12,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div className="p-4">
-          <h4
-            className="mb-2 text-center"
-            style={{ color: "#1e293b", fontWeight: 700 }}
+      <Card style={{ width: "100%", maxWidth: 440 }}>
+        <h4
+          style={{
+            ...commonStyles.pageTitle,
+            fontSize: "24px",
+            textAlign: "center",
+            marginBottom: "8px",
+          }}
+        >
+          Kayıt Ol
+        </h4>
+        <p
+          style={{
+            ...commonStyles.pageSubtitle,
+            textAlign: "center",
+            marginBottom: "24px",
+          }}
+        >
+          Hesap oluşturmak için bilgilerinizi girin.
+        </p>
+
+        {success && (
+          <Alert type="success" message="Kayıt başarılı. Yönlendiriliyor..." />
+        )}
+        {error && <Alert type="error" message={error} />}
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={commonStyles.formLabel}>Ad Soyad *</label>
+            <input
+              className={`form-control ${errors.fullName ? "is-invalid" : ""}`}
+              placeholder="Adınız Soyadınız"
+              autoComplete="name"
+              autoFocus
+              {...register("fullName")}
+              aria-invalid={!!errors.fullName}
+              style={commonStyles.input}
+            />
+            {errors.fullName && (
+              <div style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}>
+                {errors.fullName.message}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={commonStyles.formLabel}>Email *</label>
+            <input
+              type="email"
+              className={`form-control ${errors.email ? "is-invalid" : ""}`}
+              placeholder="ornek@gmail.com"
+              autoComplete="email"
+              {...register("email")}
+              aria-invalid={!!errors.email}
+              style={commonStyles.input}
+            />
+            {errors.email && (
+              <div style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}>
+                {errors.email.message}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={commonStyles.formLabel}>Şifre *</label>
+            <input
+              type="password"
+              className={`form-control ${errors.password ? "is-invalid" : ""}`}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              {...register("password")}
+              aria-invalid={!!errors.password}
+              style={commonStyles.input}
+            />
+            {errors.password && (
+              <div style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}>
+                {errors.password.message}
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              marginBottom: "16px",
+              display: "flex",
+              justifyContent: "center",
+            }}
           >
-            Kayıt Ol
-          </h4>
-          <p className="text-center mb-3" style={{ color: "#64748b" }}>
-            Hesap oluşturmak için bilgilerinizi girin.
-          </p>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={RECAPTCHA_SITE_KEY}
+              theme="light"
+            />
+          </div>
 
-          {success && (
-            <div className="alert alert-success" role="alert">
-              Kayıt başarılı. Yönlendiriliyor...
-            </div>
-          )}
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isSubmitting}
+            fullWidth
+          >
+            {isSubmitting ? "Kayıt yapılıyor..." : "Kayıt Ol"}
+          </Button>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="mb-3">
-              <label className="form-label">Ad Soyad</label>
-              <input
-                className={`form-control ${
-                  errors.fullName ? "is-invalid" : ""
-                }`}
-                placeholder="Adınız Soyadınız"
-                autoComplete="name"
-                autoFocus
-                {...register("fullName")}
-                aria-invalid={!!errors.fullName}
-              />
-              {errors.fullName && (
-                <div className="invalid-feedback">
-                  {errors.fullName.message}
-                </div>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input
-                className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                type="email"
-                placeholder="ornek@gmail.com"
-                autoComplete="email"
-                {...register("email")}
-                aria-invalid={!!errors.email}
-              />
-              {errors.email && (
-                <div className="invalid-feedback">{errors.email.message}</div>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label">Şifre</label>
-              <input
-                className={`form-control ${
-                  errors.password ? "is-invalid" : ""
-                }`}
-                type="password"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                {...register("password")}
-                aria-invalid={!!errors.password}
-              />
-              {errors.password && (
-                <div className="invalid-feedback">
-                  {errors.password.message}
-                </div>
-              )}
-            </div>
-
-            <button
-              className="btn btn-primary w-100"
-              type="submit"
-              disabled={isSubmitting}
+          <div
+            style={{
+              marginTop: "16px",
+              textAlign: "center",
+              color: colors.gray[500],
+            }}
+          >
+            <span>Zaten hesabın var mı? </span>
+            <Link
+              to="/login"
+              style={{
+                color: colors.primary[600],
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
             >
-              {isSubmitting ? "Kayıt yapılıyor..." : "Kayıt Ol"}
-            </button>
-
-            <div className="mt-3 text-center">
-              <span className="text-muted me-1">Zaten hesabın var mı?</span>
-              <Link to="/login">Giriş Yap</Link>
-            </div>
-          </form>
-        </div>
-      </div>
+              Giriş Yap
+            </Link>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }

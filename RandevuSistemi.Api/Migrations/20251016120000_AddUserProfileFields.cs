@@ -75,3 +75,9 @@ namespace RandevuSistemi.Api.Migrations
 
 
 
+
+
+
+
+
+
