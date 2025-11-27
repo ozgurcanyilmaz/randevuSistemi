@@ -77,7 +77,7 @@ Modern ve kapsamlı bir randevu yönetim sistemi. Bu sistem, sağlık kuruluşla
 
 ### İlk Kullanım
 
-1. Backend ve frontend'i başlatın (yukarıdaki kurulum adımlarını takip edin).
+1. Backend ve frontend'i başlatın. Frontend için (npm i, npm start).
 
 2. Tarayıcınızda `http://localhost:5173` adresine gidin.
 
