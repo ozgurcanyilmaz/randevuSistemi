@@ -26,6 +26,9 @@ out/
 frontend/.env
 frontend/.env.*
 
+# Ignore plugins folder inside assets
+frontend/src/assets/plugins/
+
 # Build artifacts
 **/bin/
 **/obj/
