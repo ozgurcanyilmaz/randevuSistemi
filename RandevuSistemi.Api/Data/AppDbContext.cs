@@ -13,6 +13,7 @@ namespace RandevuSistemi.Api.Data
         public DbSet<Department> Departments => Set<Department>();
         public DbSet<Branch> Branches => Set<Branch>();
         public DbSet<ServiceProviderProfile> ServiceProviderProfiles => Set<ServiceProviderProfile>();
+        public DbSet<OperatorProfile> OperatorProfiles => Set<OperatorProfile>();
         public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
         public DbSet<BreakPeriod> BreakPeriods => Set<BreakPeriod>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
@@ -34,11 +35,23 @@ namespace RandevuSistemi.Api.Data
                 .HasForeignKey(sp => sp.BranchId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<Branch>()
+                .HasMany(b => b.Operators)
+                .WithOne(op => op.Branch)
+                .HasForeignKey(op => op.BranchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<ServiceProviderProfile>()
                 .HasOne(sp => sp.User)
                 .WithMany()
                 .HasForeignKey(sp => sp.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<OperatorProfile>()
+               .HasOne(op => op.User)
+               .WithMany()
+               .HasForeignKey(op => op.UserId)
+               .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<WorkingHours>()
                 .HasOne(w => w.ServiceProvider)

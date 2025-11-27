@@ -21,36 +21,52 @@ namespace RandevuSistemi.Api.Controllers
             _userManager = userManager;
         }
 
+        private async Task<OperatorProfile?> GetMyOperatorProfile()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return null;
+            return await _db.OperatorProfiles
+                .Include(op => op.Branch)
+                .FirstOrDefaultAsync(op => op.UserId == userId);
+        }
+
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboard()
         {
+            var operatorProfile = await GetMyOperatorProfile();
+            if (operatorProfile == null) return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+
+            var branchId = operatorProfile.BranchId;
             var today = DateOnly.FromDateTime(DateTime.Now);
             var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
             var startOfMonth = new DateOnly(today.Year, today.Month, 1);
 
             var todayAppointments = await _db.Appointments
-                .Where(a => a.Date == today)
+                .Include(a => a.ServiceProvider)
+                .Where(a => a.Date == today && a.ServiceProvider.BranchId == branchId)
                 .ToListAsync();
 
             var todayCheckedIn = todayAppointments.Count(a => a.CheckedInAt != null);
             var todayPending = todayAppointments.Count(a => a.CheckedInAt == null);
 
             var weekAppointments = await _db.Appointments
-                .Where(a => a.Date >= startOfWeek && a.Date <= today)
+                .Include(a => a.ServiceProvider)
+                .Where(a => a.Date >= startOfWeek && a.Date <= today && a.ServiceProvider.BranchId == branchId)
                 .ToListAsync();
 
             var weekCheckedIn = weekAppointments.Count(a => a.CheckedInAt != null);
             var weekTotal = weekAppointments.Count;
 
             var monthAppointments = await _db.Appointments
-                .Where(a => a.Date >= startOfMonth && a.Date <= today)
+                .Include(a => a.ServiceProvider)
+                .Where(a => a.Date >= startOfMonth && a.Date <= today && a.ServiceProvider.BranchId == branchId)
                 .ToListAsync();
 
             var monthCheckedIn = monthAppointments.Count(a => a.CheckedInAt != null);
             var monthTotal = monthAppointments.Count;
 
             var providerStats = await _db.Appointments
-                .Where(a => a.Date == today)
+                .Where(a => a.Date == today && a.ServiceProvider.BranchId == branchId)
                 .Include(a => a.ServiceProvider)
                     .ThenInclude(sp => sp.User)
                 .Include(a => a.ServiceProvider)
@@ -74,7 +90,7 @@ namespace RandevuSistemi.Api.Controllers
                 .ToListAsync();
 
             var recentCheckIns = await _db.Appointments
-                .Where(a => a.CheckedInAt != null && a.Date == today)
+                .Where(a => a.CheckedInAt != null && a.Date == today && a.ServiceProvider.BranchId == branchId)
                 .Include(a => a.User)
                 .Include(a => a.ServiceProvider)
                     .ThenInclude(sp => sp.Branch)
@@ -139,7 +155,15 @@ namespace RandevuSistemi.Api.Controllers
         [HttpGet("appointments/search")]
         public async Task<IActionResult> SearchAppointments([FromQuery] string? name, [FromQuery] DateOnly? date)
         {
-            var q = _db.Appointments.Include(a => a.User).AsQueryable();
+            var operatorProfile = await GetMyOperatorProfile();
+            if (operatorProfile == null) return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+
+            var branchId = operatorProfile.BranchId;
+            var q = _db.Appointments
+                .Include(a => a.User)
+                .Include(a => a.ServiceProvider)
+                .Where(a => a.ServiceProvider.BranchId == branchId)
+                .AsQueryable();
             if (date.HasValue)
             {
                 q = q.Where(a => a.Date == date.Value);
@@ -159,8 +183,14 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments/check-in")]
         public async Task<IActionResult> CheckIn([FromBody] CheckInRequest req)
         {
-            var appt = await _db.Appointments.FindAsync(req.AppointmentId);
-            if (appt == null) return NotFound();
+            var operatorProfile = await GetMyOperatorProfile();
+            if (operatorProfile == null) return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+
+            var branchId = operatorProfile.BranchId;
+            var appt = await _db.Appointments
+                .Include(a => a.ServiceProvider)
+                .FirstOrDefaultAsync(a => a.Id == req.AppointmentId && a.ServiceProvider.BranchId == branchId);
+            if (appt == null) return NotFound("Appointment not found or you don't have access to this appointment");
             if (appt.CheckedInAt != null) return BadRequest("Already checked in");
             appt.CheckedInAt = DateTimeOffset.UtcNow;
             await _db.SaveChangesAsync();
@@ -171,6 +201,10 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments")]
         public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentRequest req)
         {
+            var operatorProfile = await GetMyOperatorProfile();
+            if (operatorProfile == null) return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+
+            var branchId = operatorProfile.BranchId;
             var today = DateOnly.FromDateTime(DateTime.Now);
             if (req.Date == today)
             {
@@ -181,8 +215,10 @@ namespace RandevuSistemi.Api.Controllers
                 }
             }
 
-            var provider = await _db.ServiceProviderProfiles.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.Id == req.ProviderId);
-            if (provider == null) return NotFound("Provider not found");
+            var provider = await _db.ServiceProviderProfiles
+                .Include(p => p.Appointments)
+                .FirstOrDefaultAsync(p => p.Id == req.ProviderId && p.BranchId == branchId);
+            if (provider == null) return NotFound("Provider not found or you don't have access to this provider");
 
             var expected = TimeSpan.FromMinutes(provider.SessionDurationMinutes);
             var actual = req.End.ToTimeSpan() - req.Start.ToTimeSpan();
@@ -251,8 +287,14 @@ namespace RandevuSistemi.Api.Controllers
             if (req.WeightKg.HasValue && req.WeightKg < 0)
                 return BadRequest("Kilo negatif olamaz.");
 
-            var provider = await _db.ServiceProviderProfiles.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.Id == req.ProviderId);
-            if (provider == null) return NotFound("Provider not found");
+            var operatorProfile = await GetMyOperatorProfile();
+            if (operatorProfile == null) return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+
+            var branchId = operatorProfile.BranchId;
+            var provider = await _db.ServiceProviderProfiles
+                .Include(p => p.Appointments)
+                .FirstOrDefaultAsync(p => p.Id == req.ProviderId && p.BranchId == branchId);
+            if (provider == null) return NotFound("Provider not found or you don't have access to this provider");
 
             var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.TcKimlikNo == req.TcKimlikNo);
 

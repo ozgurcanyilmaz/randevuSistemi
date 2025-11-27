@@ -266,7 +266,16 @@ export default function ProviderWaiting() {
                     <th style={commonStyles.table.header}>Durum</th>
                   </tr>
                 </thead>
-                <tbody>
+              </table>
+              <div
+                style={{
+                  maxHeight: "60vh",
+                  overflowY: "auto",
+                  overflowX: "auto",
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <tbody>
                   {filtered.map((a) => (
                     <tr
                       key={a.id}
@@ -295,8 +304,9 @@ export default function ProviderWaiting() {
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

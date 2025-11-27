@@ -28,24 +28,24 @@ namespace RandevuSistemi.Api.Controllers
             {
                 return BadRequest("Department name is required");
             }
-            
+
             var trimmedName = department.Name.Trim();
             if (trimmedName.Length < 2)
             {
                 return BadRequest("Department name must be at least 2 characters");
             }
-            
+
             if (trimmedName.Length > 100)
             {
                 return BadRequest("Department name must be at most 100 characters");
             }
-            
+
             var existing = await _db.Departments.FirstOrDefaultAsync(d => d.Name.Trim().ToLower() == trimmedName.ToLower());
             if (existing != null)
             {
                 return Conflict("A department with this name already exists");
             }
-            
+
             department.Name = trimmedName;
             _db.Departments.Add(department);
             await _db.SaveChangesAsync();
@@ -60,30 +60,30 @@ namespace RandevuSistemi.Api.Controllers
             {
                 return BadRequest("Branch name is required");
             }
-            
+
             var trimmedName = request.Name.Trim();
             if (trimmedName.Length < 2)
             {
                 return BadRequest("Branch name must be at least 2 characters");
             }
-            
+
             if (trimmedName.Length > 100)
             {
                 return BadRequest("Branch name must be at most 100 characters");
             }
-            
+
             var department = await _db.Departments.Include(d => d.Branches).FirstOrDefaultAsync(d => d.Id == departmentId);
             if (department == null)
             {
                 return NotFound("Department not found");
             }
-            
+
             var existing = department.Branches?.FirstOrDefault(b => b.Name.Trim().ToLower() == trimmedName.ToLower());
             if (existing != null)
             {
                 return Conflict("A branch with this name already exists in this department");
             }
-            
+
             var branch = new Branch { Name = trimmedName, DepartmentId = departmentId };
             _db.Branches.Add(branch);
             await _db.SaveChangesAsync();
@@ -98,12 +98,12 @@ namespace RandevuSistemi.Api.Controllers
             {
                 return BadRequest("UserId is required");
             }
-            
+
             if (request.BranchId <= 0)
             {
                 return BadRequest("Invalid BranchId");
             }
-            
+
             var user = await _userManager.FindByIdAsync(request.UserId);
             if (user == null) return NotFound("User not found");
 
@@ -129,6 +129,45 @@ namespace RandevuSistemi.Api.Controllers
             return Ok(existing);
         }
 
+        public record AssignOperatorRequest(string UserId, int BranchId);
+        [HttpPost("assign-operator")]
+        public async Task<IActionResult> AssignOperator([FromBody] AssignOperatorRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                return BadRequest("UserId is required");
+            }
+
+            if (request.BranchId <= 0)
+            {
+                return BadRequest("Invalid BranchId");
+            }
+
+            var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user == null) return NotFound("User not found");
+
+            var branch = await _db.Branches.FindAsync(request.BranchId);
+            if (branch == null) return NotFound("Branch not found");
+
+            var existing = await _db.OperatorProfiles.FirstOrDefaultAsync(x => x.UserId == request.UserId);
+            if (existing == null)
+            {
+                existing = new OperatorProfile
+                {
+                    UserId = request.UserId,
+                    BranchId = request.BranchId
+                };
+                _db.OperatorProfiles.Add(existing);
+            }
+            else
+            {
+                existing.BranchId = request.BranchId;
+            }
+            await _db.SaveChangesAsync();
+            await _userManager.AddToRoleAsync(user, "Operator");
+            return Ok(existing);
+        }
+
         public record AssignRoleRequest(string UserId, string Role);
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
@@ -137,12 +176,12 @@ namespace RandevuSistemi.Api.Controllers
             {
                 return BadRequest("UserId is required");
             }
-            
+
             if (string.IsNullOrWhiteSpace(request.Role))
             {
                 return BadRequest("Role is required");
             }
-            
+
             var user = await _userManager.FindByIdAsync(request.UserId);
             if (user == null) return NotFound("User not found");
 

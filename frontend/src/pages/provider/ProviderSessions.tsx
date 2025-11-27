@@ -297,7 +297,15 @@ export default function ProviderSessions() {
             }
           />
         ) : (
-          <div style={{ display: "grid", gap: "16px" }}>
+          <div
+            style={{
+              display: "grid",
+              gap: "16px",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              paddingRight: "8px",
+            }}
+          >
             {filtered.map((sess) => {
               return (
                 <Card

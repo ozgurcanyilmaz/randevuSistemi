@@ -15,6 +15,7 @@ namespace RandevuSistemi.Api.Models
         public Department Department { get; set; } = null!;
 
         public ICollection<ServiceProviderProfile> ServiceProviders { get; set; } = new List<ServiceProviderProfile>();
+        public ICollection<OperatorProfile> Operators { get; set; } = new List<OperatorProfile>();
     }
 
     public class ServiceProviderProfile
@@ -26,7 +27,7 @@ namespace RandevuSistemi.Api.Models
         public int BranchId { get; set; }
         public Branch Branch { get; set; } = null!;
 
-        public int SessionDurationMinutes { get; set; } = 30; // default
+        public int SessionDurationMinutes { get; set; } = 30; 
 
         public ICollection<WorkingHours> WorkingHours { get; set; } = new List<WorkingHours>();
         public ICollection<BreakPeriod> BreakPeriods { get; set; } = new List<BreakPeriod>();
@@ -51,6 +52,16 @@ namespace RandevuSistemi.Api.Models
         public DayOfWeek DayOfWeek { get; set; }
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
+    }
+
+    public class OperatorProfile
+    {
+        public int Id { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser User { get; set; } = null!;
+
+        public int BranchId { get; set; }
+        public Branch Branch { get; set; } = null!;
     }
 
     public class Appointment

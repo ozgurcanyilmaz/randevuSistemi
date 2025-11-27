@@ -251,19 +251,6 @@ export default function ProviderAppointments() {
     return sessions[apptId];
   };
 
-  const getSessionStatusText = (status: number) => {
-    switch (status) {
-      case 0:
-        return "🔄 Görüşme Devam Ediyor";
-      case 1:
-        return "📝 Görüşme Tamamlandı";
-      case 2:
-        return "❌ İptal Edildi";
-      default:
-        return "❓ Bilinmiyor";
-    }
-  };
-
   const getSessionStatusBadge = (status: number) => {
     switch (status) {
       case 0:
@@ -336,7 +323,15 @@ export default function ProviderAppointments() {
             }
           />
         ) : (
-          <div style={{ display: "grid", gap: "16px" }}>
+          <div
+            style={{
+              display: "grid",
+              gap: "16px",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              paddingRight: "8px",
+            }}
+          >
             {filtered.map((a) => {
               const isPast = toDate(a).getTime() < now.getTime();
               const checked = !!a.checkedInAt;

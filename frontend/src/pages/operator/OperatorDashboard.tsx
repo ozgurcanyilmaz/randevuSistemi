@@ -290,39 +290,60 @@ export default function OperatorDashboard() {
           <>
             <div
               style={{
-                padding: 20,
+                padding: displayedProviders.length <= 3 ? "16px 20px" : "20px",
                 overflowX: "auto",
                 maxWidth: "100%",
               }}
             >
               <ResponsiveContainer
                 width="100%"
-                height={Math.max(300, Math.min(displayedProviders.length * 60, 600))}
+                height={
+                  displayedProviders.length === 0
+                    ? 200
+                    : displayedProviders.length === 1
+                    ? 180
+                    : displayedProviders.length === 2
+                    ? 220
+                    : displayedProviders.length === 3
+                    ? 260
+                    : Math.min(displayedProviders.length * 50 + 100, 500)
+                }
               >
                 <BarChart
                   data={chartData}
                   layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: Math.min(140, Math.max(100, displayedProviders.length * 15)),
+                    bottom: 10,
+                  }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.gray[100]} />
                   <XAxis
                     type="number"
                     stroke={colors.gray[500]}
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 11 }}
                     allowDecimals={false}
+                    tick={{ fill: colors.gray[600] }}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
                     stroke={colors.gray[500]}
-                    width={140}
-                    style={{ fontSize: 12 }}
+                    width={Math.min(140, Math.max(100, displayedProviders.length * 15))}
+                    style={{ fontSize: 11 }}
+                    tick={{ fill: colors.gray[600] }}
                   />
                   <Tooltip
                     content={<CustomTooltip />}
                     cursor={{ fill: colors.gray[50] }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 13 }} iconType="circle" />
+                  <Legend
+                    wrapperStyle={{ fontSize: 12, paddingTop: "8px" }}
+                    iconType="circle"
+                    iconSize={8}
+                  />
                   <Bar
                     dataKey="Check-in"
                     stackId="a"

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RandevuSistemi.Api.Data;
 using RandevuSistemi.Api.Models;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 namespace RandevuSistemi.Api.Controllers
 {
@@ -13,9 +14,31 @@ namespace RandevuSistemi.Api.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public UserController(AppDbContext db)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public UserController(AppDbContext db, UserManager<ApplicationUser> userManager)
         {
             _db = db;
+            _userManager = userManager;
+        }
+
+        private async Task<bool> IsOperator()
+        {
+            if (!User.Identity?.IsAuthenticated ?? true) return false;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return false;
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return false;
+            return await _userManager.IsInRoleAsync(user, "Operator");
+        }
+
+        private async Task<OperatorProfile?> GetOperatorProfile()
+        {
+            if (!User.Identity?.IsAuthenticated ?? true) return null;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return null;
+            return await _db.OperatorProfiles
+                .Include(op => op.Branch)
+                .FirstOrDefaultAsync(op => op.UserId == userId);
         }
 
         [HttpGet("profile")]
@@ -93,6 +116,34 @@ namespace RandevuSistemi.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetDepartments()
         {
+            if (await IsOperator())
+            {
+                var operatorProfile = await GetOperatorProfile();
+                if (operatorProfile == null)
+                {
+                    return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+                }
+
+                var branch = operatorProfile.Branch;
+                var department = await _db.Departments
+                    .Include(d => d.Branches)
+                    .FirstOrDefaultAsync(d => d.Id == branch.DepartmentId);
+
+                if (department == null)
+                {
+                    return NotFound("Department not found");
+                }
+
+                var filteredDepartment = new
+                {
+                    department.Id,
+                    department.Name,
+                    Branches = department.Branches.Where(b => b.Id == branch.Id).Select(b => new { b.Id, b.Name }).ToList()
+                };
+
+                return Ok(new[] { filteredDepartment });
+            }
+
             var data = await _db.Departments.Include(d => d.Branches).ToListAsync();
             return Ok(data);
         }
@@ -101,6 +152,20 @@ namespace RandevuSistemi.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetProvidersByBranch(int branchId)
         {
+            if (await IsOperator())
+            {
+                var operatorProfile = await GetOperatorProfile();
+                if (operatorProfile == null)
+                {
+                    return Unauthorized("Operator profile not found. Please contact admin to assign you to a branch.");
+                }
+
+                if (operatorProfile.BranchId != branchId)
+                {
+                    return BadRequest("You can only access providers from your assigned branch.");
+                }
+            }
+
             var providers = await _db.ServiceProviderProfiles
                 .Include(p => p.User)
                 .Where(p => p.BranchId == branchId)

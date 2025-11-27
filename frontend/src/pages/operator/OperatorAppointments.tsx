@@ -302,7 +302,16 @@ export default function OperatorHome() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                </table>
+                <div
+                  style={{
+                    maxHeight: "60vh",
+                    overflowY: "auto",
+                    overflowX: "auto",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <tbody>
                     {items.length === 0 ? (
                       <tr>
                         <td
@@ -369,8 +378,9 @@ export default function OperatorHome() {
                         </tr>
                       ))
                     )}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

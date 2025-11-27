@@ -1,7 +1,19 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { getRoles, logout } from "../services/auth";
+import { api } from "../services/api";
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
+
+type UserProfile = {
+  email: string;
+  fullName: string | null;
+  phoneNumber: string | null;
+  tcKimlikNo: string | null;
+  gender: string | null;
+  address: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+};
 
 export default function AppLayout({ children }: PropsWithChildren) {
   const roles = getRoles();
@@ -16,6 +28,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [openOperatorAppt, setOpenOperatorAppt] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -53,6 +67,30 @@ export default function AppLayout({ children }: PropsWithChildren) {
       setSidebarOpen(false);
     }
   }, [pathname, isMobile]);
+
+  useEffect(() => {
+    async function loadUserProfile() {
+      try {
+        const { data } = await api.get<UserProfile>("/user/profile");
+        setUserProfile(data);
+      } catch {
+        const email = localStorage.getItem("email");
+        if (email) {
+          setUserProfile({ email, fullName: null, phoneNumber: null, tcKimlikNo: null, gender: null, address: null, heightCm: null, weightKg: null });
+        }
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    loadUserProfile();
+  }, []);
+
+  const getUserDisplayName = () => {
+    if (userProfile?.fullName) {
+      return userProfile.fullName;
+    }
+    return userProfile?.email || localStorage.getItem("email") || "Kullanıcı";
+  };
 
   const adminRootActive = pathname === "/admin";
   const providerRootActive = pathname === "/provider/appointments";
@@ -171,8 +209,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 logout();
                 navigate("/login", { replace: true });
               }}
+              style={{
+                fontSize: "13px",
+                padding: "6px 12px",
+              }}
             >
-              <i className="fas fa-sign-out-alt" /> Çıkış Yap
+              <i className="fas fa-sign-out-alt" /> Çıkış
             </button>
           </li>
         </ul>
@@ -200,8 +242,58 @@ export default function AppLayout({ children }: PropsWithChildren) {
             goHome();
           }}
           title="Randevu Sistemi"
+          style={{
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
         >
-          <span className="brand-text font-weight-light">Randevu Sistemi</span>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "8px",
+              background: "rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              flexShrink: 0,
+            }}
+          >
+            📅
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              className="brand-text font-weight-light"
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#fff",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              Randevu Sistemi
+            </div>
+            {!loadingProfile && (
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "rgba(255, 255, 255, 0.7)",
+                  marginTop: "2px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {getUserDisplayName()}
+              </div>
+            )}
+          </div>
         </a>
 
         <div className="sidebar">
@@ -356,6 +448,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         >
                           <i className="far fa-circle nav-icon" />
                           <p>İlgiliyi Şubeye Atama</p>
+                        </NavLink>
+                      </li>
+                      <li className="nav-item">
+                        <NavLink
+                          to="/admin/roles/assign-operator"
+                          end
+                          className={({ isActive }) =>
+                            `nav-link${isActive ? " active" : ""}`
+                          }
+                        >
+                          <i className="far fa-circle nav-icon" />
+                          <p style={{ fontSize: "0.85rem" }}>Operatörü Şubeye Atama</p>
                         </NavLink>
                       </li>
                     </ul>

@@ -205,7 +205,15 @@ export default function UserAppointments() {
             }
           />
         ) : (
-          <div style={{ display: "grid", gap: "16px" }}>
+          <div
+            style={{
+              display: "grid",
+              gap: "16px",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              paddingRight: "8px",
+            }}
+          >
             {dataForTab.map((a) => {
               const isPast = toDate(a).getTime() < now.getTime();
               return (

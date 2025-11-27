@@ -32,7 +32,9 @@ export default function Roles() {
   const [selectedUser, setSelectedUser] = useState("");
   const [role, setRole] = useState("Operator");
   const [selectedBranch, setSelectedBranch] = useState<number | "">("");
-  const [activeTab, setActiveTab] = useState<"assignRole" | "assignProvider">(
+  const [selectedOperatorBranch, setSelectedOperatorBranch] = useState<number | "">("");
+  const [selectedOperatorUser, setSelectedOperatorUser] = useState("");
+  const [activeTab, setActiveTab] = useState<"assignRole" | "assignProvider" | "assignOperator">(
     "assignRole"
   );
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,8 @@ export default function Roles() {
   useEffect(() => {
     if (location.pathname.endsWith("/assign-provider"))
       setActiveTab("assignProvider");
+    else if (location.pathname.endsWith("/assign-operator"))
+      setActiveTab("assignOperator");
     else setActiveTab("assignRole");
   }, [location.pathname]);
 
@@ -82,8 +86,23 @@ export default function Roles() {
     await load();
   }
 
+  async function assignOperator() {
+    if (!selectedOperatorUser || !selectedOperatorBranch) return;
+    await api.post("/admin/assign-operator", {
+      userId: selectedOperatorUser,
+      branchId: selectedOperatorBranch,
+    });
+    setSelectedOperatorBranch("");
+    setSelectedOperatorUser("");
+    await load();
+  }
+
   const providerUsers = users.filter((u) =>
     u.roles.includes("ServiceProvider")
+  );
+
+  const operatorUsers = users.filter((u) =>
+    u.roles.includes("Operator")
   );
 
   const allBranches = departments.flatMap((d) =>
@@ -93,6 +112,7 @@ export default function Roles() {
   const tabs = [
     { id: "assignRole", label: "🧩 Rol Atama" },
     { id: "assignProvider", label: "🏪 İlgiliyi Şubeye Atama" },
+    { id: "assignOperator", label: "👨‍💼 Operatörü Şubeye Atama" },
   ];
 
   return (
@@ -106,11 +126,13 @@ export default function Roles() {
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={(tabId) => {
-          setActiveTab(tabId as "assignRole" | "assignProvider");
+          setActiveTab(tabId as "assignRole" | "assignProvider" | "assignOperator");
           if (tabId === "assignRole") {
             navigate("/admin/roles");
-          } else {
+          } else if (tabId === "assignProvider") {
             navigate("/admin/roles/assign-provider");
+          } else if (tabId === "assignOperator") {
+            navigate("/admin/roles/assign-operator");
           }
         }}
       />
@@ -468,6 +490,215 @@ export default function Roles() {
               }}
             >
               Şube atamak için soldaki listeden bir ilgili seçin ve ardından şube
+              seçin.
+            </div>
+          )}
+
+        {activeTab === "assignOperator" && (
+          <div style={commonStyles.grid.twoColumn}>
+            <Card
+              style={{
+                background: colors.gray[50],
+                border: `1px solid ${colors.gray[200]}`,
+              }}
+            >
+              <h2 style={commonStyles.cardSubheader}>➕ Operatörü Şubeye Ata</h2>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div>
+                  <label style={commonStyles.formLabel}>👤 Operatör Seçin</label>
+                  <select
+                    style={commonStyles.select}
+                    value={selectedOperatorUser}
+                    onChange={(e) => setSelectedOperatorUser(e.target.value)}
+                  >
+                    <option value="">Operatör seçin</option>
+                    {operatorUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.fullName || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={commonStyles.formLabel}>🏪 Şube Seçin</label>
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                    <select
+                      style={{ ...commonStyles.select, flex: 1, minWidth: "150px" }}
+                      value={selectedOperatorBranch}
+                      onChange={(e) => setSelectedOperatorBranch(Number(e.target.value))}
+                    >
+                      <option value="">Şube seçin</option>
+                      {allBranches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.depName} - {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="primary"
+                      onClick={assignOperator}
+                      disabled={!selectedOperatorUser || !selectedOperatorBranch}
+                      style={{ whiteSpace: "nowrap" }}
+                    >
+                      ➕ Ata
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div style={{ display: "grid", gap: "24px" }}>
+              <Card>
+                <h3
+                  style={{
+                    fontSize: "clamp(14px, 2vw, 16px)",
+                    fontWeight: 600,
+                    color: colors.gray[900],
+                    margin: 0,
+                    marginBottom: "16px",
+                  }}
+                >
+                  👨‍💼 Operatörler ({operatorUsers.length})
+                </h3>
+                {operatorUsers.length === 0 ? (
+                  <EmptyState message="Henüz Operator rolünde kullanıcı yok." />
+                ) : (
+                  <div>
+                    {operatorUsers.map((u, index) => (
+                      <div
+                        key={u.id}
+                        onClick={() => setSelectedOperatorUser(u.id)}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px 20px",
+                          borderBottom:
+                            index < operatorUsers.length - 1
+                              ? `1px solid ${colors.gray[100]}`
+                              : "none",
+                          transition: "background 0.2s",
+                          cursor: "pointer",
+                          background:
+                            selectedOperatorUser === u.id ? colors.primary[50] : "white",
+                          wordBreak: "break-word",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = colors.gray[50];
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background =
+                            selectedOperatorUser === u.id ? colors.primary[50] : "white";
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: colors.gray[900],
+                            fontSize: "clamp(12px, 2vw, 14px)",
+                            flex: 1,
+                          }}
+                        >
+                          <div style={{ fontWeight: 600 }}>
+                            {u.fullName || u.email}
+                          </div>
+                          <div
+                            style={{
+                              color: colors.gray[500],
+                              fontSize: "clamp(11px, 1.5vw, 13px)",
+                            }}
+                          >
+                            {u.email}
+                          </div>
+                        </div>
+                        <Badge variant="primary" style={{ marginLeft: "12px" }}>
+                          Operator
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              <Card
+                style={{
+                  background: colors.gray[50],
+                  border: `1px solid ${colors.gray[200]}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: "clamp(14px, 2vw, 16px)",
+                      fontWeight: 600,
+                      color: colors.gray[900],
+                      margin: 0,
+                    }}
+                  >
+                    🏢 Departman & Şube Özeti
+                  </h3>
+                  <Badge variant="success">
+                    {departments.reduce(
+                      (acc, d) => acc + (d.branches?.length || 0),
+                      0
+                    )}{" "}
+                    şube
+                  </Badge>
+                </div>
+                {departments.length === 0 ? (
+                  <EmptyState message="Departman bulunamadı. Şube atamak için önce departman/şube oluşturun." />
+                ) : (
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    {departments.map((d) => (
+                      <div
+                        key={d.id}
+                        style={{
+                          color: colors.gray[700],
+                          fontSize: "clamp(12px, 2vw, 14px)",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        <strong style={{ color: colors.gray[900] }}>
+                          {d.name}
+                        </strong>{" "}
+                        <Badge variant="gray" style={{ marginLeft: "8px" }}>
+                          {(d.branches || []).length} şube
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "assignOperator" &&
+          !selectedOperatorUser &&
+          operatorUsers.length > 0 && (
+            <div
+              style={{
+                marginTop: "24px",
+                padding: "16px",
+                background: colors.gray[50],
+                border: `1px dashed ${colors.gray[300]}`,
+                borderRadius: "8px",
+                color: colors.gray[500],
+                fontSize: "clamp(12px, 2vw, 14px)",
+                wordBreak: "break-word",
+              }}
+            >
+              Şube atamak için soldaki listeden bir operatör seçin ve ardından şube
               seçin.
             </div>
           )}
