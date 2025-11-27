@@ -7,21 +7,21 @@ import AppLayout from './components/AppLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 //admin
-import Admin from './pages/admin/Admin'
-import Departments from './pages/admin/Departments'
-import Roles from './pages/admin/Roles'
+import Admin from './pages/admin/AdminDashboard'
+import Departments from './pages/admin/AdminDepartments'
+import Roles from './pages/admin/AdminRoles'
 //operator
-import OperatorHome from './pages/operator/OperatorHome'
+import OperatorHome from './pages/operator/OperatorAppointments'
 import OperatorWalkIn from './pages/operator/OperatorWalkIn'
 //provider
-import Provider from './pages/provider/Provider'
+import Provider from './pages/provider/ProviderParameters'
 import ProviderAppointments from './pages/provider/ProviderAppointments'
 import ProviderSessions from './pages/provider/ProviderSessions'
 import ProviderWaiting from './pages/provider/ProviderWaiting'
 //user
 import UserAppointments from './pages/user/UserAppointments'
 import UserHome from './pages/user/UserHome'
-import ProfilePage from './pages/user/Profile'
+import ProfilePage from './pages/user/UserProfile'
 import OperatorDashboard from './pages/operator/OperatorDashboard'
 
 function PrivateRoute({ children }: { children: JSX.Element }) {

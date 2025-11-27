@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  Alert,
+  Button,
+  Loading,
+  EmptyState,
+  Modal,
+} from "../../components/common";
+import { commonStyles, colors, getButtonHoverHandlers } from "../../styles/commonStyles";
+import { formatDate } from "../../utils/formatters";
 
 type Department = {
   id: number;
@@ -28,8 +41,11 @@ export default function UserHome() {
   const [error, setError] = useState<string | null>(null);
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [booking, setBooking] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDepartments();
@@ -100,31 +116,8 @@ export default function UserHome() {
 
       setShowConfirm(false);
       setSelectedSlot(null);
+      setShowSuccess(true);
       if (providerId && date) await loadSlots(Number(providerId), date);
-
-      // Show success modal
-      const modal = document.createElement("div");
-      modal.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 32px;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        z-index: 10000;
-        max-width: 500px;
-        text-align: center;
-      `;
-      modal.innerHTML = `
-        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px;">✓</div>
-        <h2 style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Başarılı!</h2>
-        <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">Randevunuz başarıyla oluşturuldu! Randevunuzu 'Randevularım' bölümünden görüntüleyebilirsiniz.</p>
-        <button onclick="this.parentElement.remove()" style="background: #16a34a; color: white; font-weight: 600; padding: 12px 32px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">Tamam</button>
-      `;
-      document.body.appendChild(modal);
-      setTimeout(() => modal.remove(), 5000);
     } catch (e: any) {
       const msg = e?.response?.data ?? "Randevu alınamadı";
       setShowConfirm(false);
@@ -133,13 +126,7 @@ export default function UserHome() {
         typeof msg === "string" &&
         msg.includes("Profilinizdeki gerekli bilgileri tamamlayın")
       ) {
-        if (
-          confirm(
-            "Profilinizdeki gerekli bilgileri tamamlayın. Profil sayfasına gitmek ister misiniz?"
-          )
-        ) {
-          window.location.href = "/profile";
-        }
+        setShowProfileModal(true);
       } else {
         setError(typeof msg === "string" ? msg : "Randevu alınamadı.");
       }
@@ -177,524 +164,457 @@ export default function UserHome() {
   }, []);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-        padding: 24,
-      }}
-    >
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1
+    <PageContainer>
+      <PageHeader
+        title="Randevu Al"
+        subtitle="Şube, ilgili ve tarih seçerek uygun saatleri görüntüleyin."
+      />
+
+      <Card style={{ marginBottom: "16px" }}>
+        {error && <Alert type="error" message={error} />}
+
+        <div style={commonStyles.grid.formGrid}>
+          <div>
+            <label style={commonStyles.formLabel}>🏢 Departman/Şube</label>
+            <select
+              style={commonStyles.select}
+              value={branchId}
+              onChange={async (e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  setBranchId("");
+                  setProviders([]);
+                  setProviderId("");
+                  setDate("");
+                  setSlots([]);
+                  return;
+                }
+                const id = Number(raw);
+                setBranchId(id);
+                setProviders([]);
+                setProviderId("");
+                setDate("");
+                setSlots([]);
+                await loadProviders(id);
+              }}
+              disabled={loadingDeps}
+            >
+              <option value="">Şube seçin</option>
+              {allBranches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.depName} - {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={commonStyles.formLabel}>👤 İlgili</label>
+            <select
+              style={commonStyles.select}
+              value={providerId}
+              onChange={async (e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  setProviderId("");
+                  setSlots([]);
+                  return;
+                }
+                const id = Number(raw);
+                setProviderId(id);
+                await loadSlots(id, date);
+              }}
+              disabled={!branchId || loadingProviders}
+            >
+              <option value="">İlgili seçin</option>
+              {providers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.fullName || p.email}
+                </option>
+              ))}
+            </select>
+            {!!selectedProvider && (
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: "clamp(11px, 1.5vw, 12px)",
+                  color: colors.gray[500],
+                }}
+              >
+                ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes} dk
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label style={commonStyles.formLabel}>📅 Tarih</label>
+            <input
+              style={commonStyles.input}
+              type="date"
+              min={todayStr}
+              value={date}
+              onChange={async (e) => {
+                const d = e.target.value;
+                setDate(d);
+                if (typeof providerId === "number") {
+                  await loadSlots(providerId, d);
+                } else {
+                  setSlots([]);
+                }
+              }}
+              disabled={!branchId || !providerId}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 style={commonStyles.cardSubheader}>⏰ Uygun Saatler</h2>
+
+        {(!branchId || !providerId || !date) && (
+          <EmptyState message="Saatleri görmek için şube, ilgili ve tarih seçin." />
+        )}
+
+        {loadingSlots && <Loading message="Saatler yükleniyor..." />}
+
+        {!loadingSlots &&
+          branchId &&
+          providerId &&
+          date &&
+          slots.length === 0 && (
+            <EmptyState message="Seçilen tarihte uygun saat bulunamadı. Lütfen başka bir tarih deneyin." />
+          )}
+
+        {slots.length > 0 && (
+          <div
             style={{
-              fontSize: 30,
-              fontWeight: "bold",
-              color: "#1e293b",
-              marginBottom: 8,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+              gap: "12px",
             }}
           >
-            Randevu Al
-          </h1>
-          <p style={{ color: "#64748b" }}>
-            Şube, ilgili ve tarih seçerek uygun saatleri görüntüleyin.
+            {slots.map((s, i) => (
+              <button
+                key={`${s.start}-${s.end}-${i}`}
+                onClick={() => {
+                  setSelectedSlot(s);
+                  setShowConfirm(true);
+                }}
+                style={{
+                  padding: "12px 16px",
+                  border: `2px solid ${colors.primary[200]}`,
+                  background: "white",
+                  color: colors.primary[800],
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "clamp(12px, 2vw, 15px)",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                  wordBreak: "break-word",
+                }}
+                {...getButtonHoverHandlers("secondary")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colors.primary[50];
+                  e.currentTarget.style.borderColor = colors.primary[400];
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary[200]}`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "white";
+                  e.currentTarget.style.borderColor = colors.primary[200];
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <span style={{ fontSize: "clamp(11px, 1.5vw, 13px)", color: colors.gray[500] }}>
+                  ⏰
+                </span>
+                <span>{s.start}</span>
+                <span style={{ fontSize: "clamp(10px, 1.5vw, 12px)", color: colors.gray[400] }}>
+                  —
+                </span>
+                <span>{s.end}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Modal
+        isOpen={showConfirm}
+        onClose={() => !booking && setShowConfirm(false)}
+        title="Randevu Onayı"
+      >
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              background: colors.primary[50],
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+              fontSize: "32px",
+            }}
+          >
+            📅
+          </div>
+          <p style={{ color: colors.gray[500], fontSize: "clamp(12px, 2vw, 14px)" }}>
+            Aşağıdaki bilgileri kontrol edin ve onaylayın.
           </p>
         </div>
 
         <div
           style={{
-            background: "white",
-            borderRadius: 12,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
-            padding: 24,
-            marginBottom: 16,
+            background: colors.gray[50],
+            borderRadius: "12px",
+            padding: "20px",
+            marginBottom: "24px",
           }}
         >
-          {error && (
+          <div style={{ display: "grid", gap: "16px" }}>
+            <div>
+              <div
+                style={{
+                  fontSize: "clamp(10px, 1.5vw, 12px)",
+                  fontWeight: 600,
+                  color: colors.gray[500],
+                  marginBottom: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Departman / Şube
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(14px, 2vw, 16px)",
+                  fontWeight: 600,
+                  color: colors.gray[900],
+                  wordBreak: "break-word",
+                }}
+              >
+                {selectedBranch?.depName} - {selectedBranch?.name}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "clamp(10px, 1.5vw, 12px)",
+                  fontWeight: 600,
+                  color: colors.gray[500],
+                  marginBottom: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                İlgili
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(14px, 2vw, 16px)",
+                  fontWeight: 600,
+                  color: colors.gray[900],
+                  wordBreak: "break-word",
+                }}
+              >
+                {selectedProvider?.fullName || selectedProvider?.email}
+              </div>
+            </div>
+
             <div
               style={{
-                marginBottom: 16,
-                padding: "10px 12px",
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                color: "#991b1b",
-                borderRadius: 8,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
               }}
             >
-              {error}
-            </div>
-          )}
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 16,
-            }}
-          >
-            <div>
-              <label className="form-label">🏢 Departman/Şube</label>
-              <select
-                className="form-control select2"
-                value={branchId}
-                onChange={async (e) => {
-                  const raw = e.target.value;
-                  if (raw === "") {
-                    setBranchId("");
-                    setProviders([]);
-                    setProviderId("");
-                    setDate("");
-                    setSlots([]);
-                    return;
-                  }
-                  const id = Number(raw);
-                  setBranchId(id);
-                  setProviders([]);
-                  setProviderId("");
-                  setDate("");
-                  setSlots([]);
-                  await loadProviders(id);
-                }}
-                disabled={loadingDeps}
-              >
-                <option value="">Şube seçin</option>
-                {allBranches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.depName} - {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="form-label">👤 İlgili</label>
-              <select
-                className="form-control select2"
-                value={providerId}
-                onChange={async (e) => {
-                  const raw = e.target.value;
-                  if (raw === "") {
-                    setProviderId("");
-                    setSlots([]);
-                    return;
-                  }
-                  const id = Number(raw);
-                  setProviderId(id);
-                  await loadSlots(id, date);
-                }}
-                disabled={!branchId || loadingProviders}
-              >
-                <option value="">İlgili seçin</option>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.fullName || p.email}
-                  </option>
-                ))}
-              </select>
-              {!!selectedProvider && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
-                  ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes} dk
+              <div>
+                <div
+                  style={{
+                    fontSize: "clamp(10px, 1.5vw, 12px)",
+                    fontWeight: 600,
+                    color: colors.gray[500],
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Tarih
                 </div>
-              )}
-            </div>
+                <div
+                  style={{
+                    fontSize: "clamp(14px, 2vw, 16px)",
+                    fontWeight: 600,
+                    color: colors.gray[900],
+                  }}
+                >
+                  {formatDate(date)}
+                </div>
+              </div>
 
-            <div>
-              <label className="form-label">📅 Tarih</label>
-              <input
-                className="form-control"
-                type="date"
-                min={todayStr}
-                value={date}
-                onChange={async (e) => {
-                  const d = e.target.value;
-                  setDate(d);
-                  if (typeof providerId === "number") {
-                    await loadSlots(providerId, d);
-                  } else {
-                    setSlots([]);
-                  }
-                }}
-                disabled={!branchId || !providerId}
-              />
+              <div>
+                <div
+                  style={{
+                    fontSize: "clamp(10px, 1.5vw, 12px)",
+                    fontWeight: 600,
+                    color: colors.gray[500],
+                    marginBottom: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Saat
+                </div>
+                <div
+                  style={{
+                    fontSize: "clamp(14px, 2vw, 16px)",
+                    fontWeight: 600,
+                    color: colors.gray[900],
+                  }}
+                >
+                  {selectedSlot?.start} - {selectedSlot?.end}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div
           style={{
-            background: "white",
-            borderRadius: 12,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
-            padding: 24,
+            background: colors.primary[50],
+            border: `1px solid ${colors.primary[200]}`,
+            borderRadius: "8px",
+            padding: "12px",
+            marginBottom: "24px",
+            fontSize: "clamp(12px, 2vw, 13px)",
+            color: colors.primary[800],
+            lineHeight: 1.5,
           }}
         >
-          <h2
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#1e293b",
-              margin: 0,
-              marginBottom: 16,
-            }}
-          >
-            ⏰ Uygun Saatler
-          </h2>
-
-          {(!branchId || !providerId || !date) && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "48px 20px",
-                color: "#94a3b8",
-                background: "#f8fafc",
-                borderRadius: 8,
-                border: "1px dashed #cbd5e1",
-              }}
-            >
-              Saatleri görmek için şube, ilgili ve tarih seçin.
-            </div>
-          )}
-
-          {loadingSlots && (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "10px 12px",
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                color: "#64748b",
-                borderRadius: 8,
-              }}
-            >
-              Saatler yükleniyor...
-            </div>
-          )}
-
-          {!loadingSlots &&
-            branchId &&
-            providerId &&
-            date &&
-            slots.length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "48px 20px",
-                  color: "#94a3b8",
-                  background: "#f8fafc",
-                  borderRadius: 8,
-                  border: "1px dashed #cbd5e1",
-                }}
-              >
-                Seçilen tarihte uygun saat bulunamadı. Lütfen başka bir tarih
-                deneyin.
-              </div>
-            )}
-
-          {slots.length > 0 && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-                gap: 12,
-              }}
-            >
-              {slots.map((s, i) => (
-                <button
-                  key={`${s.start}-${s.end}-${i}`}
-                  onClick={() => {
-                    setSelectedSlot(s);
-                    setShowConfirm(true);
-                  }}
-                  style={{
-                    padding: "16px 20px",
-                    border: "2px solid #bfdbfe",
-                    background: "white",
-                    color: "#1e40af",
-                    borderRadius: 12,
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: 15,
-                    transition: "all 0.2s",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = "#eff6ff";
-                    e.currentTarget.style.borderColor = "#60a5fa";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 12px rgba(37, 99, 235, 0.2)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = "white";
-                    e.currentTarget.style.borderColor = "#bfdbfe";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: "#64748b" }}>⏰</span>
-                  <span>{s.start}</span>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
-                  <span>{s.end}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          💡 <strong>Not:</strong> Randevunuza zamanında gelmeyi unutmayın.
+          Değişiklik için şube ile iletişime geçebilirsiniz.
         </div>
 
-        {showConfirm && selectedSlot && (
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <Button
+            variant="secondary"
+            onClick={() => !booking && setShowConfirm(false)}
+            disabled={booking}
+            style={{ flex: 1, minWidth: "120px" }}
+          >
+            İptal
+          </Button>
+          <Button
+            variant="primary"
+            onClick={confirmBooking}
+            disabled={booking}
+            style={{ flex: 1, minWidth: "120px" }}
+          >
+            {booking ? "Oluşturuluyor..." : "✓ Randevuyu Onayla"}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Başarılı!"
+      >
+        <div style={{ textAlign: "center" }}>
           <div
             style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
+              width: "64px",
+              height: "64px",
+              background: colors.success[50],
+              borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              zIndex: 1000,
+              margin: "0 auto 16px",
+              fontSize: "32px",
             }}
-            onClick={() => !booking && setShowConfirm(false)}
           >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: 32,
-                maxWidth: 500,
-                width: "90%",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    background: "#eff6ff",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                    fontSize: 32,
-                  }}
-                >
-                  📅
-                </div>
-                <h2
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: "#1e293b",
-                    marginBottom: 8,
-                  }}
-                >
-                  Randevu Onayı
-                </h2>
-                <p style={{ color: "#64748b", fontSize: 14 }}>
-                  Aşağıdaki bilgileri kontrol edin ve onaylayın.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  background: "#f8fafc",
-                  borderRadius: 12,
-                  padding: 20,
-                  marginBottom: 24,
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gap: 16,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#64748b",
-                        marginBottom: 4,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      Departman / Şube
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#1e293b",
-                      }}
-                    >
-                      {selectedBranch?.depName} - {selectedBranch?.name}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#64748b",
-                        marginBottom: 4,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      İlgili
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#1e293b",
-                      }}
-                    >
-                      {selectedProvider?.fullName || selectedProvider?.email}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 16,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#64748b",
-                          marginBottom: 4,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Tarih
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#1e293b",
-                        }}
-                      >
-                        {new Date(date).toLocaleDateString("tr-TR", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#64748b",
-                          marginBottom: 4,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Saat
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 600,
-                          color: "#1e293b",
-                        }}
-                      >
-                        {selectedSlot.start} - {selectedSlot.end}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: "#eff6ff",
-                  border: "1px solid #bfdbfe",
-                  borderRadius: 8,
-                  padding: 12,
-                  marginBottom: 24,
-                  fontSize: 13,
-                  color: "#1e40af",
-                  lineHeight: 1.5,
-                }}
-              >
-                💡 <strong>Not:</strong> Randevunuza zamanında gelmeyi
-                unutmayın. Değişiklik için şube ile iletişime geçebilirsiniz.
-              </div>
-
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  style={{
-                    flex: 1,
-                    background: "transparent",
-                    color: "#64748b",
-                    fontWeight: 500,
-                    padding: "12px 24px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 15,
-                    transition: "all 0.2s",
-                  }}
-                  onClick={() => !booking && setShowConfirm(false)}
-                  disabled={booking}
-                  onMouseOver={(e) => {
-                    if (!booking) e.currentTarget.style.background = "#f1f5f9";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  İptal
-                </button>
-                <button
-                  style={{
-                    flex: 1,
-                    background: "#2563eb",
-                    color: "white",
-                    fontWeight: 600,
-                    padding: "12px 24px",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor: booking ? "not-allowed" : "pointer",
-                    fontSize: 15,
-                    transition: "all 0.2s",
-                  }}
-                  onClick={confirmBooking}
-                  disabled={booking}
-                  onMouseOver={(e) => {
-                    if (!booking) e.currentTarget.style.background = "#1d4ed8";
-                  }}
-                  onMouseOut={(e) => {
-                    if (!booking) e.currentTarget.style.background = "#2563eb";
-                  }}
-                >
-                  {booking ? "Oluşturuluyor..." : "✓ Randevuyu Onayla"}
-                </button>
-              </div>
-            </div>
+            ✓
           </div>
-        )}
-      </div>
-    </div>
+          <p
+            style={{
+              color: colors.gray[500],
+              fontSize: "clamp(13px, 2vw, 15px)",
+              lineHeight: "1.6",
+              marginBottom: "24px",
+              wordBreak: "break-word",
+            }}
+          >
+            Randevunuz başarıyla oluşturuldu! Randevunuzu 'Randevularım'
+            bölümünden görüntüleyebilirsiniz.
+          </p>
+          <Button variant="success" onClick={() => setShowSuccess(false)} fullWidth>
+            Tamam
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        title="Profil Bilgileri Eksik"
+      >
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <div
+            style={{
+              width: "64px",
+              height: "64px",
+              background: colors.warning[50],
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+              fontSize: "32px",
+            }}
+          >
+            ⚠️
+          </div>
+          <p
+            style={{
+              color: colors.gray[500],
+              fontSize: "clamp(12px, 2vw, 14px)",
+              lineHeight: "1.6",
+              marginBottom: "24px",
+              wordBreak: "break-word",
+            }}
+          >
+            Profilinizdeki gerekli bilgileri tamamlayın. Profil sayfasına gitmek ister misiniz?
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowProfileModal(false)}
+            style={{ flex: 1, minWidth: "120px" }}
+          >
+            Hayır
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowProfileModal(false);
+              navigate("/profile");
+            }}
+            style={{ flex: 1, minWidth: "120px" }}
+          >
+            Evet, Git
+          </Button>
+        </div>
+      </Modal>
+    </PageContainer>
   );
 }

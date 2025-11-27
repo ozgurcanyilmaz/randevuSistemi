@@ -30,6 +30,21 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("start")]
         public async Task<IActionResult> StartSession([FromBody] StartSessionRequest req)
         {
+            if (req.AppointmentId <= 0)
+            {
+                return BadRequest("Invalid appointment ID");
+            }
+            
+            if (string.IsNullOrWhiteSpace(req.Summary))
+            {
+                return BadRequest("Summary is required");
+            }
+            
+            if (req.Summary.Length > 500)
+            {
+                return BadRequest("Summary must be at most 500 characters");
+            }
+            
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
 
@@ -48,7 +63,7 @@ namespace RandevuSistemi.Api.Controllers
             {
                 AppointmentId = req.AppointmentId,
                 StartedAt = DateTimeOffset.UtcNow,
-                Summary = req.Summary,
+                Summary = req.Summary.Trim(),
                 Status = SessionStatus.InProgress
             };
 
@@ -90,19 +105,43 @@ namespace RandevuSistemi.Api.Controllers
                 return BadRequest("Cannot update completed session");
 
             if (!string.IsNullOrWhiteSpace(req.Summary))
-                session.Summary = req.Summary;
+            {
+                if (req.Summary.Length > 500)
+                    return BadRequest("Summary must be at most 500 characters");
+                session.Summary = req.Summary.Trim();
+            }
             if (req.Notes != null)
-                session.Notes = req.Notes;
+            {
+                if (req.Notes.Length > 2000)
+                    return BadRequest("Notes must be at most 2000 characters");
+                session.Notes = req.Notes.Trim();
+            }
             if (req.Outcome != null)
-                session.Outcome = req.Outcome;
+            {
+                if (req.Outcome.Length > 2000)
+                    return BadRequest("Outcome must be at most 2000 characters");
+                session.Outcome = req.Outcome.Trim();
+            }
             if (req.ActionItems != null)
-                session.ActionItems = req.ActionItems;
+            {
+                if (req.ActionItems.Length > 2000)
+                    return BadRequest("Action items must be at most 2000 characters");
+                session.ActionItems = req.ActionItems.Trim();
+            }
             if (req.NextSessionDate.HasValue)
                 session.NextSessionDate = req.NextSessionDate;
             if (req.NextSessionNotes != null)
-                session.NextSessionNotes = req.NextSessionNotes;
+            {
+                if (req.NextSessionNotes.Length > 1000)
+                    return BadRequest("Next session notes must be at most 1000 characters");
+                session.NextSessionNotes = req.NextSessionNotes.Trim();
+            }
             if (req.ProviderPrivateNotes != null)
-                session.ProviderPrivateNotes = req.ProviderPrivateNotes;
+            {
+                if (req.ProviderPrivateNotes.Length > 2000)
+                    return BadRequest("Provider private notes must be at most 2000 characters");
+                session.ProviderPrivateNotes = req.ProviderPrivateNotes.Trim();
+            }
 
             await _db.SaveChangesAsync();
             return Ok(session);
@@ -120,6 +159,29 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("{id}/complete")]
         public async Task<IActionResult> CompleteSession(int id, [FromBody] CompleteSessionRequest req)
         {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid session ID");
+            }
+            
+            if (string.IsNullOrWhiteSpace(req.Summary))
+            {
+                return BadRequest("Summary is required");
+            }
+            
+            if (req.Summary.Length > 500)
+                return BadRequest("Summary must be at most 500 characters");
+            if (req.Notes != null && req.Notes.Length > 2000)
+                return BadRequest("Notes must be at most 2000 characters");
+            if (req.Outcome != null && req.Outcome.Length > 2000)
+                return BadRequest("Outcome must be at most 2000 characters");
+            if (req.ActionItems != null && req.ActionItems.Length > 2000)
+                return BadRequest("Action items must be at most 2000 characters");
+            if (req.NextSessionNotes != null && req.NextSessionNotes.Length > 1000)
+                return BadRequest("Next session notes must be at most 1000 characters");
+            if (req.ProviderPrivateNotes != null && req.ProviderPrivateNotes.Length > 2000)
+                return BadRequest("Provider private notes must be at most 2000 characters");
+            
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
 
@@ -132,13 +194,13 @@ namespace RandevuSistemi.Api.Controllers
             if (session.Status == SessionStatus.Completed)
                 return BadRequest("Session already completed");
 
-            session.Summary = req.Summary;
-            session.Notes = req.Notes;
-            session.Outcome = req.Outcome;
-            session.ActionItems = req.ActionItems;
+            session.Summary = req.Summary.Trim();
+            session.Notes = req.Notes?.Trim();
+            session.Outcome = req.Outcome?.Trim();
+            session.ActionItems = req.ActionItems?.Trim();
             session.NextSessionDate = req.NextSessionDate;
-            session.NextSessionNotes = req.NextSessionNotes;
-            session.ProviderPrivateNotes = req.ProviderPrivateNotes;
+            session.NextSessionNotes = req.NextSessionNotes?.Trim();
+            session.ProviderPrivateNotes = req.ProviderPrivateNotes?.Trim();
             session.CompletedAt = DateTimeOffset.UtcNow;
             session.Status = SessionStatus.Completed;
 

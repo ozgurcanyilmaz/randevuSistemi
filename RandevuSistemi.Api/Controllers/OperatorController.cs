@@ -28,7 +28,6 @@ namespace RandevuSistemi.Api.Controllers
             var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
             var startOfMonth = new DateOnly(today.Year, today.Month, 1);
 
-            // Today's stats
             var todayAppointments = await _db.Appointments
                 .Where(a => a.Date == today)
                 .ToListAsync();
@@ -36,7 +35,6 @@ namespace RandevuSistemi.Api.Controllers
             var todayCheckedIn = todayAppointments.Count(a => a.CheckedInAt != null);
             var todayPending = todayAppointments.Count(a => a.CheckedInAt == null);
 
-            // This week's stats
             var weekAppointments = await _db.Appointments
                 .Where(a => a.Date >= startOfWeek && a.Date <= today)
                 .ToListAsync();
@@ -44,7 +42,6 @@ namespace RandevuSistemi.Api.Controllers
             var weekCheckedIn = weekAppointments.Count(a => a.CheckedInAt != null);
             var weekTotal = weekAppointments.Count;
 
-            // This month's stats
             var monthAppointments = await _db.Appointments
                 .Where(a => a.Date >= startOfMonth && a.Date <= today)
                 .ToListAsync();
@@ -52,7 +49,6 @@ namespace RandevuSistemi.Api.Controllers
             var monthCheckedIn = monthAppointments.Count(a => a.CheckedInAt != null);
             var monthTotal = monthAppointments.Count;
 
-            // Provider stats for today
             var providerStats = await _db.Appointments
                 .Where(a => a.Date == today)
                 .Include(a => a.ServiceProvider)
@@ -77,7 +73,6 @@ namespace RandevuSistemi.Api.Controllers
                 .OrderByDescending(x => x.Total)
                 .ToListAsync();
 
-            // Recent check-ins (last 10)
             var recentCheckIns = await _db.Appointments
                 .Where(a => a.CheckedInAt != null && a.Date == today)
                 .Include(a => a.User)
@@ -97,7 +92,6 @@ namespace RandevuSistemi.Api.Controllers
                 })
                 .ToListAsync();
 
-            // Hourly distribution for today
             var hourlyStats = todayAppointments
                 .GroupBy(a => a.StartTime.Hour)
                 .Select(g => new

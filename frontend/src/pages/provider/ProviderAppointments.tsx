@@ -1,5 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  Alert,
+  Button,
+  Badge,
+  Loading,
+  EmptyState,
+  Tabs,
+  Input,
+  Modal,
+  Textarea,
+} from "../../components/common";
+import { commonStyles, colors } from "../../styles/commonStyles";
+import { formatDate, formatTime } from "../../utils/formatters";
 
 type Appt = {
   id: number;
@@ -81,21 +97,6 @@ export default function ProviderAppointments() {
     return isNaN(d.getTime()) ? new Date(a.date) : d;
   };
 
-  const formatDate = (dStr: string) => {
-    const d = new Date(dStr);
-    if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString("tr-TR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-    }
-    const [y, m, dd] = dStr.split("-");
-    if (y && m && dd) return `${dd}.${m}.${y}`;
-    return dStr;
-  };
-
-  const formatTime = (t: string) => t;
   const now = new Date();
   const sorted = useMemo(
     () => [...items].sort((a, b) => toDate(b).getTime() - toDate(a).getTime()),
@@ -263,908 +264,554 @@ export default function ProviderAppointments() {
     }
   };
 
-  const getSessionStatusColor = (status: number) => {
+  const getSessionStatusBadge = (status: number) => {
     switch (status) {
       case 0:
-        return { bg: "#fef3c7", fg: "#92400e" };
+        return <Badge variant="warning">🔄 Görüşme Devam Ediyor</Badge>;
       case 1:
-        return { bg: "#dbeafe", fg: "#1e40af" };
+        return <Badge variant="primary">📝 Görüşme Tamamlandı</Badge>;
       case 2:
-        return { bg: "#fee2e2", fg: "#991b1b" };
+        return <Badge variant="error">❌ İptal Edildi</Badge>;
       default:
-        return { bg: "#e5e7eb", fg: "#374151" };
+        return <Badge variant="gray">❓ Bilinmiyor</Badge>;
     }
   };
 
+  const tabs = [
+    { id: "upcoming", label: `⏳ Yaklaşan (${upcoming.length})` },
+    { id: "past", label: `📜 Geçmiş (${past.length})` },
+    { id: "all", label: `📁 Tümü (${sorted.length})` },
+  ];
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-        padding: "24px",
-      }}
-    >
-      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "24px" }}>
-          <h1
-            style={{
-              fontSize: "30px",
-              fontWeight: "bold",
-              color: "#1e293b",
-              marginBottom: "8px",
-            }}
-          >
-            Randevularım
-          </h1>
-          <p style={{ color: "#64748b" }}>
-            Randevuları yönetin, not ekleyin, görüşme başlatın ve takip
-            randevusu oluşturun.
-          </p>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Randevularım"
+        subtitle="Randevuları yönetin, not ekleyin, görüşme başlatın ve takip randevusu oluşturun."
+      />
 
-        {error && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: "12px 16px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 8,
-              color: "#991b1b",
-            }}
-          >
-            {error}
-          </div>
-        )}
+      {error && <Alert type="error" message={error} />}
+      {success && <Alert type="success" message={success} />}
 
-        {success && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: "12px 16px",
-              background: "#ecfdf5",
-              border: "1px solid #bbf7d0",
-              borderRadius: 8,
-              color: "#166534",
-            }}
-          >
-            {success}
-          </div>
-        )}
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+      />
 
+      <Card style={{ marginBottom: "16px" }}>
         <div
           style={{
-            background: "white",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
-            marginBottom: "16px",
-            overflow: "hidden",
+            display: "flex",
+            gap: "12px",
+            alignItems: "center",
+            flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0" }}>
-            <button
-              onClick={() => setActiveTab("upcoming")}
-              style={{
-                flex: 1,
-                padding: "16px 24px",
-                fontWeight: 500,
-                fontSize: "14px",
-                cursor: "pointer",
-                border: "none",
-                background:
-                  activeTab === "upcoming" ? "#eff6ff" : "transparent",
-                color: activeTab === "upcoming" ? "#1d4ed8" : "#64748b",
-                borderBottom:
-                  activeTab === "upcoming" ? "2px solid #2563eb" : "none",
-                transition: "all 0.2s",
-              }}
-            >
-              ⏳ Yaklaşan ({upcoming.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("past")}
-              style={{
-                flex: 1,
-                padding: "16px 24px",
-                fontWeight: 500,
-                fontSize: "14px",
-                cursor: "pointer",
-                border: "none",
-                background: activeTab === "past" ? "#eff6ff" : "transparent",
-                color: activeTab === "past" ? "#1d4ed8" : "#64748b",
-                borderBottom:
-                  activeTab === "past" ? "2px solid #2563eb" : "none",
-                transition: "all 0.2s",
-              }}
-            >
-              📜 Geçmiş ({past.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("all")}
-              style={{
-                flex: 1,
-                padding: "16px 24px",
-                fontWeight: 500,
-                fontSize: "14px",
-                cursor: "pointer",
-                border: "none",
-                background: activeTab === "all" ? "#eff6ff" : "transparent",
-                color: activeTab === "all" ? "#1d4ed8" : "#64748b",
-                borderBottom:
-                  activeTab === "all" ? "2px solid #2563eb" : "none",
-                transition: "all 0.2s",
-              }}
-            >
-              📁 Tümü ({sorted.length})
-            </button>
-          </div>
-
-          <div
-            style={{
-              padding: "16px",
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-              background: "#f8fafc",
-            }}
-          >
-            <input
-              className="form-control"
-              placeholder="Kullanıcı adına göre ara..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              style={{ maxWidth: 360 }}
-            />
-            <button
-              style={{
-                background: "transparent",
-                color: "#64748b",
-                fontWeight: 500,
-                padding: "8px 16px",
-                border: "1px solid #cbd5e1",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                opacity: !q ? 0.5 : 1,
-              }}
-              onClick={() => setQ("")}
-              disabled={!q}
-            >
-              Temizle
-            </button>
-          </div>
+          <Input
+            placeholder="Kullanıcı adına göre ara..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            style={{ flex: 1, maxWidth: "360px" }}
+          />
+          <Button variant="secondary" onClick={() => setQ("")} disabled={!q}>
+            Temizle
+          </Button>
         </div>
+      </Card>
 
-        <div
-          style={{
-            background: "white",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
-            padding: "24px",
-          }}
-        >
-          {loading && (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "12px 16px",
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: 8,
-                color: "#64748b",
-              }}
-            >
-              Yükleniyor...
-            </div>
-          )}
+      <Card>
+        {loading && <Loading message="Yükleniyor..." />}
 
-          {!loading && filtered.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "48px 24px",
-                color: "#94a3b8",
-                background: "#f8fafc",
-                borderRadius: 8,
-                border: "1px dashed #cbd5e1",
-              }}
-            >
-              {q
+        {!loading && filtered.length === 0 ? (
+          <EmptyState
+            message={
+              q
                 ? "Arama sonucuna uygun randevu bulunamadı."
                 : activeTab === "upcoming"
                 ? "Yaklaşan randevu bulunmuyor."
                 : activeTab === "past"
                 ? "Geçmiş randevu kaydı bulunmuyor."
-                : "Henüz randevu bulunmuyor."}
-            </div>
-          ) : (
-            <div style={{ display: "grid", gap: 16 }}>
-              {filtered.map((a) => {
-                const isPast = toDate(a).getTime() < now.getTime();
-                const checked = !!a.checkedInAt;
-                const session = getSessionForAppointment(a.id);
-                const hasSession = !!session;
-                const canStartSession = checked && !hasSession;
-                const statusColor = session
-                  ? getSessionStatusColor(session.status)
-                  : null;
+                : "Henüz randevu bulunmuyor."
+            }
+          />
+        ) : (
+          <div style={{ display: "grid", gap: "16px" }}>
+            {filtered.map((a) => {
+              const isPast = toDate(a).getTime() < now.getTime();
+              const checked = !!a.checkedInAt;
+              const session = getSessionForAppointment(a.id);
+              const hasSession = !!session;
+              const canStartSession = checked && !hasSession;
 
-                return (
+              return (
+                <Card
+                  key={a.id}
+                  style={{
+                    background: colors.gray[50],
+                    border: `1px solid ${colors.gray[200]}`,
+                    transition: "all 0.2s",
+                  }}
+                >
                   <div
-                    key={a.id}
                     style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 12,
-                      padding: 20,
-                      background: "#f8fafc",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = "white";
-                      e.currentTarget.style.borderColor = "#cbd5e1";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = "#f8fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: "12px",
+                      flexWrap: "wrap",
+                      gap: "12px",
                     }}
                   >
+                    <div style={{ flex: 1, minWidth: "200px" }}>
+                      <div
+                        style={{
+                          fontSize: "clamp(16px, 3vw, 18px)",
+                          fontWeight: 600,
+                          color: colors.gray[900],
+                          marginBottom: "4px",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        👤 {a.fullName || "Kullanıcı"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(12px, 2vw, 14px)",
+                          color: colors.gray[500],
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "16px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span>📅 {formatDate(a.date)}</span>
+                        <span>
+                          ⏰ {formatTime(a.startTime)} – {formatTime(a.endTime)}
+                        </span>
+                      </div>
+                    </div>
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
+                        gap: "8px",
+                        flexWrap: "wrap",
                         alignItems: "flex-start",
-                        marginBottom: 12,
                       }}
                     >
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 18,
-                            fontWeight: 600,
-                            color: "#1e293b",
-                            marginBottom: 4,
-                          }}
-                        >
-                          👤 {a.fullName || "Kullanıcı"}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            color: "#64748b",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 16,
-                          }}
-                        >
-                          <span>📅 {formatDate(a.date)}</span>
-                          <span>
-                            ⏰ {formatTime(a.startTime)} –{" "}
-                            {formatTime(a.endTime)}
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
-                      >
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "6px 14px",
-                            borderRadius: "9999px",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            background: checked
-                              ? "#dcfce7"
-                              : isPast
-                              ? "#e5e7eb"
-                              : "#fee2e2",
-                            color: checked
-                              ? "#166534"
-                              : isPast
-                              ? "#374151"
-                              : "#991b1b",
-                          }}
-                        >
-                          {checked
-                            ? "✓ Check-in"
+                      <Badge
+                        variant={
+                          checked
+                            ? "success"
                             : isPast
-                            ? "📋 Geçti"
-                            : "⏳ Bekliyor"}
-                        </span>
-
-                        {hasSession && statusColor && (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              padding: "6px 14px",
-                              borderRadius: "9999px",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              background: statusColor.bg,
-                              color: statusColor.fg,
-                            }}
-                          >
-                            {getSessionStatusText(session.status)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {a.notes && (
-                      <div
-                        style={{
-                          background: "#eff6ff",
-                          border: "1px solid #bfdbfe",
-                          borderRadius: 8,
-                          padding: 12,
-                          marginBottom: 12,
-                        }}
+                            ? "gray"
+                            : "error"
+                        }
                       >
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#1e40af",
-                            marginBottom: 4,
-                          }}
-                        >
-                          📝 Randevu Notu:
-                        </div>
-                        <div style={{ fontSize: 14, color: "#1e40af" }}>
-                          {a.notes}
-                        </div>
-                      </div>
-                    )}
+                        {checked
+                          ? "✓ Check-in"
+                          : isPast
+                          ? "📋 Geçti"
+                          : "⏳ Bekliyor"}
+                      </Badge>
 
-                    {a.providerNotes && (
-                      <div
-                        style={{
-                          background: "#dcfce7",
-                          border: "1px solid #bbf7d0",
-                          borderRadius: 8,
-                          padding: 12,
-                          marginBottom: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: "#166534",
-                            marginBottom: 4,
-                          }}
-                        >
-                          💬 İlgili Notu:
-                        </div>
-                        <div style={{ fontSize: 14, color: "#166534" }}>
-                          {a.providerNotes}
-                        </div>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {canStartSession && (
-                        <button
-                          style={{
-                            background: "#8b5cf6",
-                            color: "white",
-                            fontWeight: 500,
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontSize: 13,
-                            transition: "all 0.2s",
-                          }}
-                          onClick={() => {
-                            setSessionAppt(a);
-                            setShowSessionModal(true);
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = "#7c3aed";
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = "#8b5cf6";
-                          }}
-                        >
-                          🎯 Görüşme Başlat
-                        </button>
-                      )}
-
-                      <button
-                        style={{
-                          background: "#eff6ff",
-                          color: "#1d4ed8",
-                          fontWeight: 500,
-                          padding: "8px 16px",
-                          border: "1px solid #bfdbfe",
-                          borderRadius: 8,
-                          cursor: "pointer",
-                          fontSize: 13,
-                          transition: "all 0.2s",
-                        }}
-                        onClick={() => {
-                          setSelectedAppt(a);
-                          setNoteText(a.providerNotes || "");
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.background = "#dbeafe";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = "#eff6ff";
-                        }}
-                      >
-                        {a.providerNotes ? "✏️ Notu Düzenle" : "📝 Not Ekle"}
-                      </button>
-                      {a.userId && (
-                        <button
-                          style={{
-                            background: "#ecfdf5",
-                            color: "#166534",
-                            fontWeight: 500,
-                            padding: "8px 16px",
-                            border: "1px solid #bbf7d0",
-                            borderRadius: 8,
-                            cursor: "pointer",
-                            fontSize: 13,
-                            transition: "all 0.2s",
-                          }}
-                          onClick={() => {
-                            setFollowUpUser(a.userId!);
-                            setShowFollowUp(true);
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = "#d1fae5";
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = "#ecfdf5";
-                          }}
-                        >
-                          ➕ Takip Randevusu
-                        </button>
-                      )}
+                      {hasSession && getSessionStatusBadge(session.status)}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
-        {showSessionModal && sessionAppt && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000,
-            }}
-            onClick={() => !startingSession && setShowSessionModal(false)}
-          >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: 32,
-                maxWidth: 500,
-                width: "90%",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  marginBottom: 16,
-                }}
-              >
-                🎯 Görüşme Başlat
-              </h2>
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  background: "#f8fafc",
-                  borderRadius: 8,
-                }}
-              >
-                <div
-                  style={{ fontSize: 14, color: "#64748b", marginBottom: 4 }}
-                >
-                  👤 Kullanıcı:{" "}
-                  <strong style={{ color: "#1e293b" }}>
-                    {sessionAppt.fullName}
-                  </strong>
-                </div>
-                <div style={{ fontSize: 14, color: "#64748b" }}>
-                  📅 Randevu: {formatDate(sessionAppt.date)} -{" "}
-                  {formatTime(sessionAppt.startTime)}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "#334155",
-                    marginBottom: 8,
-                  }}
-                >
-                  Görüşme Özeti *
-                </label>
-                <textarea
-                  className="form-control"
-                  rows={3}
-                  placeholder="Bu görüşmenin kısa bir özetini yazın..."
-                  value={sessionSummary}
-                  onChange={(e) => setSessionSummary(e.target.value)}
-                  style={{ marginBottom: 8 }}
-                />
-                <div style={{ fontSize: 12, color: "#64748b" }}>
-                  Bu özet görüşme başlatıldıktan sonra güncellenebilir
-                </div>
-              </div>
-
-              <div
-                style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}
-              >
-                <button
-                  style={{
-                    background: "transparent",
-                    color: "#64748b",
-                    fontWeight: 500,
-                    padding: "10px 20px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                  onClick={() => {
-                    if (!startingSession) {
-                      setShowSessionModal(false);
-                      setSessionSummary("");
-                    }
-                  }}
-                  disabled={startingSession}
-                >
-                  İptal
-                </button>
-                <button
-                  style={{
-                    background: sessionSummary.trim() ? "#8b5cf6" : "#94a3b8",
-                    color: "white",
-                    fontWeight: 500,
-                    padding: "10px 20px",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor:
-                      sessionSummary.trim() && !startingSession
-                        ? "pointer"
-                        : "not-allowed",
-                    fontSize: 14,
-                  }}
-                  onClick={startSession}
-                  disabled={!sessionSummary.trim() || startingSession}
-                >
-                  {startingSession ? "Başlatılıyor..." : "🎯 Görüşmeyi Başlat"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedAppt && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000,
-            }}
-            onClick={() => !savingNote && setSelectedAppt(null)}
-          >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: 32,
-                maxWidth: 500,
-                width: "90%",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  marginBottom: 16,
-                }}
-              >
-                İlgili Notu
-              </h2>
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  background: "#f8fafc",
-                  borderRadius: 8,
-                }}
-              >
-                <div
-                  style={{ fontSize: 14, color: "#64748b", marginBottom: 4 }}
-                >
-                  👤 Kullanıcı:{" "}
-                  <strong style={{ color: "#1e293b" }}>
-                    {selectedAppt.fullName}
-                  </strong>
-                </div>
-                <div style={{ fontSize: 14, color: "#64748b" }}>
-                  📅 Randevu: {formatDate(selectedAppt.date)} -{" "}
-                  {formatTime(selectedAppt.startTime)}
-                </div>
-              </div>
-              <textarea
-                className="form-control"
-                rows={4}
-                placeholder="Randevu notu yazın..."
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                style={{ marginBottom: 16 }}
-              />
-              <div
-                style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}
-              >
-                <button
-                  style={{
-                    background: "transparent",
-                    color: "#64748b",
-                    fontWeight: 500,
-                    padding: "10px 20px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                  onClick={() => !savingNote && setSelectedAppt(null)}
-                  disabled={savingNote}
-                >
-                  İptal
-                </button>
-                <button
-                  style={{
-                    background: "#2563eb",
-                    color: "white",
-                    fontWeight: 500,
-                    padding: "10px 20px",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor: savingNote ? "not-allowed" : "pointer",
-                    fontSize: 14,
-                  }}
-                  onClick={saveNote}
-                  disabled={savingNote}
-                >
-                  {savingNote ? "Kaydediliyor..." : "Kaydet"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showFollowUp && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 1000,
-            }}
-            onClick={() => setShowFollowUp(false)}
-          >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 16,
-                padding: 32,
-                maxWidth: 600,
-                width: "90%",
-                maxHeight: "80vh",
-                overflow: "auto",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  marginBottom: 16,
-                }}
-              >
-                Takip Randevusu Oluştur
-              </h2>
-
-              <div style={{ marginBottom: 16 }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: "#334155",
-                    marginBottom: 8,
-                  }}
-                >
-                  👤 Kullanıcı Seçin
-                </label>
-                <select
-                  className="form-control"
-                  value={followUpUser}
-                  onChange={(e) => setFollowUpUser(e.target.value)}
-                >
-                  <option value="">Kullanıcı seçin...</option>
-                  {uniqueUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {followUpUser && (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <label
+                  {a.notes && (
+                    <div
                       style={{
-                        display: "block",
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "#334155",
-                        marginBottom: 8,
+                        background: colors.primary[50],
+                        border: `1px solid ${colors.primary[200]}`,
+                        borderRadius: "8px",
+                        padding: "12px",
+                        marginBottom: "12px",
                       }}
                     >
-                      📅 Tarih Seçin
-                    </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      min={todayStr}
-                      value={followUpDate}
-                      onChange={(e) => setFollowUpDate(e.target.value)}
-                    />
-                  </div>
-
-                  {followUpDate && (
-                    <div>
-                      <h3
+                      <div
                         style={{
-                          fontSize: 16,
+                          fontSize: "clamp(11px, 1.5vw, 12px)",
                           fontWeight: 600,
-                          color: "#1e293b",
-                          marginBottom: 12,
+                          color: colors.primary[800],
+                          marginBottom: "4px",
                         }}
                       >
-                        ⏰ Uygun Saatler
-                      </h3>
-                      {loadingSlots ? (
-                        <div
-                          style={{
-                            textAlign: "center",
-                            padding: 24,
-                            color: "#64748b",
-                          }}
-                        >
-                          Yükleniyor...
-                        </div>
-                      ) : followUpSlots.length === 0 ? (
-                        <div
-                          style={{
-                            textAlign: "center",
-                            padding: 24,
-                            color: "#94a3b8",
-                            background: "#f8fafc",
-                            borderRadius: 8,
-                            border: "1px dashed #cbd5e1",
-                          }}
-                        >
-                          Bu tarihte uygun saat bulunamadı.
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fill, minmax(130px, 1fr))",
-                            gap: 8,
-                          }}
-                        >
-                          {followUpSlots.map((s, i) => (
-                            <button
-                              key={i}
-                              style={{
-                                padding: "12px 16px",
-                                border: "2px solid #bfdbfe",
-                                background: "white",
-                                color: "#1e40af",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                fontWeight: 600,
-                                fontSize: 14,
-                                transition: "all 0.2s",
-                              }}
-                              onClick={() => createFollowUp(s.start, s.end)}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.background = "#eff6ff";
-                                e.currentTarget.style.borderColor = "#60a5fa";
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.background = "white";
-                                e.currentTarget.style.borderColor = "#bfdbfe";
-                              }}
-                            >
-                              {s.start}
-                              <br />—<br />
-                              {s.end}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                        📝 Randevu Notu:
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(12px, 2vw, 14px)",
+                          color: colors.primary[800],
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {a.notes}
+                      </div>
                     </div>
                   )}
-                </>
-              )}
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginTop: 24,
-                }}
-              >
-                <button
-                  style={{
-                    background: "transparent",
-                    color: "#64748b",
-                    fontWeight: 500,
-                    padding: "10px 20px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 14,
-                  }}
-                  onClick={() => {
-                    setShowFollowUp(false);
-                    setFollowUpUser("");
-                    setFollowUpDate("");
-                    setFollowUpSlots([]);
-                  }}
-                >
-                  Kapat
-                </button>
-              </div>
-            </div>
+                  {a.providerNotes && (
+                    <div
+                      style={{
+                        background: colors.success[50],
+                        border: `1px solid ${colors.success[200]}`,
+                        borderRadius: "8px",
+                        padding: "12px",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "clamp(11px, 1.5vw, 12px)",
+                          fontWeight: 600,
+                          color: colors.success[800],
+                          marginBottom: "4px",
+                        }}
+                      >
+                        💬 İlgili Notu:
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(12px, 2vw, 14px)",
+                          color: colors.success[800],
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {a.providerNotes}
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {canStartSession && (
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          setSessionAppt(a);
+                          setShowSessionModal(true);
+                        }}
+                        style={{
+                          fontSize: "clamp(11px, 1.5vw, 13px)",
+                          background: colors.primary[600],
+                        }}
+                      >
+                        🎯 Görüşme Başlat
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSelectedAppt(a);
+                        setNoteText(a.providerNotes || "");
+                      }}
+                      style={{ fontSize: "clamp(11px, 1.5vw, 13px)" }}
+                    >
+                      {a.providerNotes ? "✏️ Notu Düzenle" : "📝 Not Ekle"}
+                    </Button>
+                    {a.userId && (
+                      <Button
+                        variant="success"
+                        onClick={() => {
+                          setFollowUpUser(a.userId!);
+                          setShowFollowUp(true);
+                        }}
+                        style={{ fontSize: "clamp(11px, 1.5vw, 13px)" }}
+                      >
+                        ➕ Takip Randevusu
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
-      </div>
-    </div>
+      </Card>
+
+      <Modal
+        isOpen={showSessionModal}
+        onClose={() => !startingSession && setShowSessionModal(false)}
+        title="🎯 Görüşme Başlat"
+      >
+        {sessionAppt && (
+          <>
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "12px",
+                background: colors.gray[50],
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2vw, 14px)",
+                  color: colors.gray[500],
+                  marginBottom: "4px",
+                }}
+              >
+                👤 Kullanıcı:{" "}
+                <strong style={{ color: colors.gray[900] }}>
+                  {sessionAppt.fullName}
+                </strong>
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2vw, 14px)",
+                  color: colors.gray[500],
+                }}
+              >
+                📅 Randevu: {formatDate(sessionAppt.date)} -{" "}
+                {formatTime(sessionAppt.startTime)}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <Textarea
+                label="Görüşme Özeti *"
+                rows={3}
+                placeholder="Bu görüşmenin kısa bir özetini yazın..."
+                value={sessionSummary}
+                onChange={(e) => setSessionSummary(e.target.value)}
+              />
+              <div
+                style={{
+                  fontSize: "clamp(11px, 1.5vw, 12px)",
+                  color: colors.gray[500],
+                  marginTop: "4px",
+                }}
+              >
+                Bu özet görüşme başlatıldıktan sonra güncellenebilir
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+                flexWrap: "wrap",
+              }}
+            >
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (!startingSession) {
+                    setShowSessionModal(false);
+                    setSessionSummary("");
+                  }
+                }}
+                disabled={startingSession}
+              >
+                İptal
+              </Button>
+              <Button
+                variant="primary"
+                onClick={startSession}
+                disabled={!sessionSummary.trim() || startingSession}
+                style={{
+                  background: sessionSummary.trim()
+                    ? colors.primary[600]
+                    : colors.gray[400],
+                }}
+              >
+                {startingSession ? "Başlatılıyor..." : "🎯 Görüşmeyi Başlat"}
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={!!selectedAppt}
+        onClose={() => !savingNote && setSelectedAppt(null)}
+        title="İlgili Notu"
+      >
+        {selectedAppt && (
+          <>
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "12px",
+                background: colors.gray[50],
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2vw, 14px)",
+                  color: colors.gray[500],
+                  marginBottom: "4px",
+                }}
+              >
+                👤 Kullanıcı:{" "}
+                <strong style={{ color: colors.gray[900] }}>
+                  {selectedAppt.fullName}
+                </strong>
+              </div>
+              <div
+                style={{
+                  fontSize: "clamp(12px, 2vw, 14px)",
+                  color: colors.gray[500],
+                }}
+              >
+                📅 Randevu: {formatDate(selectedAppt.date)} -{" "}
+                {formatTime(selectedAppt.startTime)}
+              </div>
+            </div>
+            <Textarea
+              rows={4}
+              placeholder="Randevu notu yazın..."
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+                marginTop: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <Button
+                variant="secondary"
+                onClick={() => !savingNote && setSelectedAppt(null)}
+                disabled={savingNote}
+              >
+                İptal
+              </Button>
+              <Button
+                variant="primary"
+                onClick={saveNote}
+                disabled={savingNote}
+              >
+                {savingNote ? "Kaydediliyor..." : "Kaydet"}
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={showFollowUp}
+        onClose={() => {
+          setShowFollowUp(false);
+          setFollowUpUser("");
+          setFollowUpDate("");
+          setFollowUpSlots([]);
+        }}
+        title="Takip Randevusu Oluştur"
+        maxWidth="600px"
+      >
+        <div style={{ marginBottom: "16px" }}>
+          <label style={commonStyles.formLabel}>👤 Kullanıcı Seçin</label>
+          <select
+            style={commonStyles.select}
+            value={followUpUser}
+            onChange={(e) => setFollowUpUser(e.target.value)}
+          >
+            <option value="">Kullanıcı seçin...</option>
+            {uniqueUsers.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {followUpUser && (
+          <>
+            <div style={{ marginBottom: "16px" }}>
+              <Input
+                label="📅 Tarih Seçin"
+                type="date"
+                min={todayStr}
+                value={followUpDate}
+                onChange={(e) => setFollowUpDate(e.target.value)}
+              />
+            </div>
+
+            {followUpDate && (
+              <div>
+                <h3
+                  style={{
+                    fontSize: "clamp(14px, 2vw, 16px)",
+                    fontWeight: 600,
+                    color: colors.gray[900],
+                    marginBottom: "12px",
+                  }}
+                >
+                  ⏰ Uygun Saatler
+                </h3>
+                {loadingSlots ? (
+                  <Loading message="Yükleniyor..." />
+                ) : followUpSlots.length === 0 ? (
+                  <EmptyState message="Bu tarihte uygun saat bulunamadı." />
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                      gap: "8px",
+                    }}
+                  >
+                    {followUpSlots.map((s, i) => (
+                      <Button
+                        key={i}
+                        variant="secondary"
+                        onClick={() => createFollowUp(s.start, s.end)}
+                        style={{
+                          fontSize: "clamp(11px, 1.5vw, 14px)",
+                          padding: "12px 16px",
+                          border: `2px solid ${colors.primary[200]}`,
+                          color: colors.primary[800],
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span>{s.start}</span>
+                        <span style={{ fontSize: "10px" }}>—</span>
+                        <span>{s.end}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "24px",
+          }}
+        >
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowFollowUp(false);
+              setFollowUpUser("");
+              setFollowUpDate("");
+              setFollowUpSlots([]);
+            }}
+          >
+            Kapat
+          </Button>
+        </div>
+      </Modal>
+    </PageContainer>
   );
 }

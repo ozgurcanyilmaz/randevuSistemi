@@ -5,6 +5,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import ReCAPTCHA from "react-google-recaptcha";
 import { login, getRoles } from "../services/auth";
 import { loginSchema, type LoginFormData } from "../schemas/validationSchemas";
+import { Card, Alert, Button } from "../components/common";
+import { commonStyles, colors } from "../styles/commonStyles";
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
@@ -59,96 +61,119 @@ export default function Login() {
 
   return (
     <div
-      className="min-vh-100 d-flex align-items-center justify-content-center"
       style={{
-        background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-        padding: 24,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        ...commonStyles.pageContainer,
       }}
     >
-      <div
-        className="card shadow-sm border-0"
-        style={{
-          width: 420,
-          borderRadius: 12,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div className="p-4">
-          <h4
-            className="mb-2 text-center"
-            style={{ color: "#1e293b", fontWeight: 700 }}
+      <Card style={{ width: "100%", maxWidth: 420 }}>
+        <h4
+          style={{
+            ...commonStyles.pageTitle,
+            fontSize: "24px",
+            textAlign: "center",
+            marginBottom: "8px",
+          }}
+        >
+          Giriş Yap
+        </h4>
+        <p
+          style={{
+            ...commonStyles.pageSubtitle,
+            textAlign: "center",
+            marginBottom: "24px",
+          }}
+        >
+          Randevu sistemine erişmek için bilgilerinizi girin.
+        </p>
+
+        {error && <Alert type="error" message={error} />}
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={commonStyles.formLabel}>Email *</label>
+            <input
+              type="email"
+              className={`form-control ${errors.email ? "is-invalid" : ""}`}
+              placeholder="ornek@gmail.com"
+              autoComplete="username"
+              autoFocus
+              {...register("email")}
+              aria-invalid={!!errors.email}
+              style={commonStyles.input}
+            />
+            {errors.email && (
+              <div style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}>
+                {errors.email.message}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={commonStyles.formLabel}>Şifre *</label>
+            <input
+              type="password"
+              className={`form-control ${errors.password ? "is-invalid" : ""}`}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              {...register("password")}
+              aria-invalid={!!errors.password}
+              style={commonStyles.input}
+            />
+            {errors.password && (
+              <div style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}>
+                {errors.password.message}
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              marginBottom: "16px",
+              display: "flex",
+              justifyContent: "center",
+            }}
           >
-            Giriş Yap
-          </h4>
-          <p className="text-center mb-3" style={{ color: "#64748b" }}>
-            Randevu sistemine erişmek için bilgilerinizi girin.
-          </p>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={RECAPTCHA_SITE_KEY}
+              theme="light"
+            />
+          </div>
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isSubmitting}
+            fullWidth
+          >
+            {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
+          </Button>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input
-                className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                type="email"
-                placeholder="ornek@gmail.com"
-                autoComplete="username"
-                autoFocus
-                {...register("email")}
-                aria-invalid={!!errors.email}
-              />
-              {errors.email && (
-                <div className="invalid-feedback">{errors.email.message}</div>
-              )}
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label">Şifre</label>
-              <input
-                className={`form-control ${
-                  errors.password ? "is-invalid" : ""
-                }`}
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                {...register("password")}
-                aria-invalid={!!errors.password}
-              />
-              {errors.password && (
-                <div className="invalid-feedback d-block">
-                  {errors.password.message}
-                </div>
-              )}
-            </div>
-
-            <div className="mb-3 d-flex justify-content-center">
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={RECAPTCHA_SITE_KEY}
-                theme="light"
-              />
-            </div>
-
-            <button
-              className="btn btn-primary w-100"
-              type="submit"
-              disabled={isSubmitting}
+          <div
+            style={{
+              marginTop: "16px",
+              textAlign: "center",
+              color: colors.gray[500],
+            }}
+          >
+            <span>Hesabın yok mu? </span>
+            <Link
+              to="/register"
+              style={{
+                color: colors.primary[600],
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
             >
-              {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
-            </button>
-
-            <div className="mt-3 text-center">
-              <span className="text-muted me-1">Hesabın yok mu?</span>
-              <Link to="/register">Hesap oluştur</Link>
-            </div>
-          </form>
-        </div>
-      </div>
+              Hesap oluştur
+            </Link>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }

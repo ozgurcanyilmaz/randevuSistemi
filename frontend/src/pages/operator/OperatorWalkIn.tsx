@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../services/api";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  Alert,
+  Button,
+  Input,
+  Textarea,
+  Loading,
+} from "../../components/common";
+import { commonStyles, colors } from "../../styles/commonStyles";
 
 type Department = {
   id: number;
@@ -134,503 +145,226 @@ export default function OperatorWalkIn() {
   }, [fullName, tcKimlikNo, phoneNumber, gender, address, providerId]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-        padding: "24px",
-      }}
-    >
-      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "24px" }}>
-          <h1
-            style={{
-              fontSize: "30px",
-              fontWeight: "bold",
-              color: "#1e293b",
-              marginBottom: "8px",
-            }}
-          >
-            Walk-in Randevu
-          </h1>
-          <p style={{ color: "#64748b" }}>
-            Randevusuz gelen kullanıcılar için hızlı randevu oluşturun.
-            Kullanıcı otomatik olarak bekleyen listesine eklenecektir.
-          </p>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Walk-in Randevu"
+        subtitle="Randevusuz gelen kullanıcılar için hızlı randevu oluşturun. Kullanıcı otomatik olarak bekleyen listesine eklenecektir."
+      />
 
-        {error && (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "12px 16px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "8px",
-              color: "#991b1b",
-            }}
-          >
-            {error}
-          </div>
-        )}
+      {error && <Alert type="error" message={error} />}
+      {success && <Alert type="success" message={success} />}
 
-        {success && (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "12px 16px",
-              background: "#ecfdf5",
-              border: "1px solid #bbf7d0",
-              borderRadius: "8px",
-              color: "#166534",
-            }}
-          >
-            {success}
-          </div>
-        )}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: "24px",
+        }}
+      >
+        <Card>
+          <h2 style={commonStyles.cardSubheader}>👤 Kullanıcı Bilgileri</h2>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))",
-            gap: "24px",
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #e2e8f0",
-              padding: "24px",
-            }}
-          >
-            <h2
+          <div style={{ display: "grid", gap: "16px" }}>
+            <Input
+              label="Ad Soyad *"
+              placeholder="Ahmet Yılmaz"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+
+            <Input
+              label="TC Kimlik No *"
+              placeholder="12345678901"
+              maxLength={11}
+              value={tcKimlikNo}
+              onChange={(e) => setTcKimlikNo(e.target.value)}
+            />
+
+            <Input
+              label="Telefon *"
+              placeholder="5551234567"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+
+            <div>
+              <label style={commonStyles.formLabel}>Cinsiyet *</label>
+              <select
+                style={commonStyles.select}
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+              >
+                <option value="">Seçiniz</option>
+                <option value="Erkek">Erkek</option>
+                <option value="Kadın">Kadın</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </div>
+
+            <Input
+              label="Adres *"
+              placeholder="Açık adres"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+
+            <div
               style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#1e293b",
-                marginBottom: "16px",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
               }}
             >
-              👤 Kullanıcı Bilgileri
-            </h2>
-
-            <div style={{ display: "grid", gap: "16px" }}>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Ad Soyad *
-                </label>
-                <input
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                  }}
-                  placeholder="Ahmet Yılmaz"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  TC Kimlik No *
-                </label>
-                <input
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                  }}
-                  placeholder="12345678901"
-                  maxLength={11}
-                  value={tcKimlikNo}
-                  onChange={(e) => setTcKimlikNo(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Telefon *
-                </label>
-                <input
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                  }}
-                  placeholder="5551234567"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Cinsiyet *
-                </label>
-                <select
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    background: "white",
-                  }}
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                >
-                  <option value="">Seçiniz</option>
-                  <option value="Erkek">Erkek</option>
-                  <option value="Kadın">Kadın</option>
-                  <option value="Diğer">Diğer</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Adres *
-                </label>
-                <input
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                  }}
-                  placeholder="Açık adres"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#334155",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Boy (cm)
-                  </label>
-                  <input
-                    type="number"
-                    style={{
-                      width: "100%",
-                      padding: "10px 16px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                    placeholder="175"
-                    value={heightCm}
-                    onChange={(e) =>
-                      setHeightCm(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#334155",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Kilo (kg)
-                  </label>
-                  <input
-                    type="number"
-                    style={{
-                      width: "100%",
-                      padding: "10px 16px",
-                      border: "1px solid #cbd5e1",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                    placeholder="70"
-                    value={weightKg}
-                    onChange={(e) =>
-                      setWeightKg(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                  />
-                </div>
-              </div>
+              <Input
+                label="Boy (cm)"
+                type="number"
+                placeholder="175"
+                value={heightCm}
+                onChange={(e) =>
+                  setHeightCm(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+              />
+              <Input
+                label="Kilo (kg)"
+                type="number"
+                placeholder="70"
+                value={weightKg}
+                onChange={(e) =>
+                  setWeightKg(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+              />
             </div>
           </div>
+        </Card>
 
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #e2e8f0",
-              padding: "24px",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#1e293b",
-                marginBottom: "16px",
-              }}
-            >
-              📅 İlgili Seçimi
-            </h2>
+        <Card>
+          <h2 style={commonStyles.cardSubheader}>📅 İlgili Seçimi</h2>
 
-            <div style={{ display: "grid", gap: "16px" }}>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  🏢 Şube *
-                </label>
-                <select
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    background: "white",
-                  }}
-                  value={branchId}
-                  onChange={async (e) => {
-                    const raw = e.target.value;
-                    if (raw === "") {
-                      setBranchId("");
+          <div style={{ display: "grid", gap: "16px" }}>
+            {loadingDeps ? (
+              <Loading message="Şubeler yükleniyor..." />
+            ) : (
+              <>
+                <div>
+                  <label style={commonStyles.formLabel}>🏢 Şube *</label>
+                  <select
+                    style={commonStyles.select}
+                    value={branchId}
+                    onChange={async (e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setBranchId("");
+                        setProviders([]);
+                        setProviderId("");
+                        return;
+                      }
+                      const id = Number(raw);
+                      setBranchId(id);
                       setProviders([]);
                       setProviderId("");
-                      return;
-                    }
-                    const id = Number(raw);
-                    setBranchId(id);
-                    setProviders([]);
-                    setProviderId("");
-                    await loadProviders(id);
-                  }}
-                  disabled={loadingDeps}
-                >
-                  <option value="">Şube seçin</option>
-                  {allBranches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.depName} - {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  👤 İlgili *
-                </label>
-                <select
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    background: "white",
-                  }}
-                  value={providerId}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw === "") {
-                      setProviderId("");
-                      return;
-                    }
-                    const id = Number(raw);
-                    setProviderId(id);
-                  }}
-                  disabled={!branchId || loadingProviders}
-                >
-                  <option value="">İlgili seçin</option>
-                  {providers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName || p.email}
-                    </option>
-                  ))}
-                </select>
-                {!!selectedProvider && (
-                  <div style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
-                    ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes}{" "}
-                    dk
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  📝 Notlar
-                </label>
-                <textarea
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    minHeight: "80px",
-                    resize: "vertical",
-                  }}
-                  placeholder="Randevu hakkında notlar..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              {!isFormValid && (
-                <div
-                  style={{
-                    padding: "10px 12px",
-                    background: "#fef3c7",
-                    border: "1px solid #fcd34d",
-                    borderRadius: "8px",
-                    color: "#92400e",
-                    fontSize: "13px",
-                  }}
-                >
-                  ⚠️ Tüm zorunlu alanları doldurun (*)
+                      await loadProviders(id);
+                    }}
+                    disabled={loadingDeps}
+                  >
+                    <option value="">Şube seçin</option>
+                    {allBranches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.depName} - {b.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
 
-              <div
-                style={{
-                  padding: "12px",
-                  background: "#eff6ff",
-                  border: "1px solid #bfdbfe",
-                  borderRadius: "8px",
-                  color: "#1e40af",
-                  fontSize: "13px",
-                  lineHeight: 1.5,
-                }}
-              >
-                💡 <strong>Not:</strong> Walk-in randevu otomatik olarak bugünün
-                tarihi ve şu anki saat ile oluşturulacak ve kullanıcı bekleyen
-                listesine eklenecektir.
-              </div>
+                <div>
+                  <label style={commonStyles.formLabel}>👤 İlgili *</label>
+                  <select
+                    style={{
+                      ...commonStyles.select,
+                      background: !branchId ? colors.gray[100] : "white",
+                      cursor: !branchId ? "not-allowed" : "pointer",
+                    }}
+                    value={providerId}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setProviderId("");
+                        return;
+                      }
+                      const id = Number(raw);
+                      setProviderId(id);
+                    }}
+                    disabled={!branchId || loadingProviders}
+                  >
+                    <option value="">İlgili seçin</option>
+                    {providers.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.fullName || p.email}
+                      </option>
+                    ))}
+                  </select>
+                  {!!selectedProvider && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontSize: "clamp(11px, 1.5vw, 12px)",
+                        color: colors.gray[500],
+                      }}
+                    >
+                      ⏱️ Seans süresi: {selectedProvider.sessionDurationMinutes}{" "}
+                      dk
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
-              <button
-                style={{
-                  width: "100%",
-                  background: isFormValid && !creating ? "#16a34a" : "#94a3b8",
-                  color: "white",
-                  fontWeight: "600",
-                  padding: "14px 24px",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: isFormValid && !creating ? "pointer" : "not-allowed",
-                  fontSize: "16px",
-                  transition: "all 0.2s",
-                }}
-                onClick={createWalkIn}
-                disabled={!isFormValid || creating}
-                onMouseOver={(e) => {
-                  if (isFormValid && !creating) {
-                    e.currentTarget.style.background = "#15803d";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (isFormValid && !creating) {
-                    e.currentTarget.style.background = "#16a34a";
-                  }
-                }}
-              >
-                {creating ? "Oluşturuluyor..." : "✓ Walk-in Randevu Oluştur"}
-              </button>
+            <Textarea
+              label="📝 Notlar"
+              placeholder="Randevu hakkında notlar..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
+
+            {!isFormValid && (
+              <Alert
+                type="warning"
+                message="⚠️ Tüm zorunlu alanları doldurun (*)"
+              />
+            )}
+
+            <div
+              style={{
+                padding: "12px",
+                background: colors.primary[50],
+                border: `1px solid ${colors.primary[200]}`,
+                borderRadius: "8px",
+                color: colors.primary[800],
+                fontSize: "clamp(12px, 2vw, 13px)",
+                lineHeight: 1.5,
+                wordBreak: "break-word",
+              }}
+            >
+              💡 <strong>Not:</strong> Walk-in randevu otomatik olarak bugünün
+              tarihi ve şu anki saat ile oluşturulacak ve kullanıcı bekleyen
+              listesine eklenecektir.
             </div>
+
+            <Button
+              variant="success"
+              onClick={createWalkIn}
+              disabled={!isFormValid || creating}
+              fullWidth
+            >
+              {creating ? "Oluşturuluyor..." : "✓ Walk-in Randevu Oluştur"}
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }

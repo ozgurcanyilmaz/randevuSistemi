@@ -36,6 +36,21 @@ export function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("email");
   localStorage.removeItem("roles");
+  
+  sessionStorage.clear();
+  
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (
+      key.toLowerCase().includes("auth") || 
+      key.toLowerCase().includes("token") || 
+      key.toLowerCase().includes("user")
+    )) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
 }
 
 export function getRoles(): string[] {
@@ -48,5 +63,19 @@ export function getRoles(): string[] {
 }
 
 export function isAuthenticated() {
-  return !!localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const exp = payload.exp * 1000; 
+    if (Date.now() >= exp) {
+      logout();
+      return false;
+    }
+    return true;
+  } catch {
+    logout();
+    return false;
+  }
 }

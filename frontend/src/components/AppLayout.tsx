@@ -14,6 +14,20 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [openDeps, setOpenDeps] = useState(false);
   const [openUsers, setOpenUsers] = useState(false);
   const [openOperatorAppt, setOpenOperatorAppt] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 992);
+      if (window.innerWidth >= 992) {
+        setSidebarOpen(false);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const adminDepartmentsMatch = useMemo(
     () => pathname.startsWith("/admin/departments"),
@@ -34,6 +48,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
     if (operatorApptMatch) setOpenOperatorAppt(true);
   }, [adminDepartmentsMatch, adminUsersMatch, operatorApptMatch]);
 
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [pathname, isMobile]);
+
   const adminRootActive = pathname === "/admin";
   const providerRootActive = pathname === "/provider/appointments";
   const operatorRootActive =
@@ -50,10 +70,51 @@ export default function AppLayout({ children }: PropsWithChildren) {
     navigate(homePath);
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sidebarOpen && isMobile) {
+        const sidebar = document.querySelector('.main-sidebar');
+        const hamburger = document.querySelector('.nav-link[aria-label="Menüyü Aç/Kapat"]');
+        const target = e.target as HTMLElement;
+        if (sidebar && !sidebar.contains(target) && hamburger && !hamburger.contains(target)) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+    if (sidebarOpen && isMobile) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [sidebarOpen, isMobile]);
+
   return (
-    <div className="wrapper">
+    <div className={`wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <nav className="main-header navbar navbar-expand navbar-white navbar-light">
         <ul className="navbar-nav">
+          <li className="nav-item">
+            <a
+              href="#"
+              className="nav-link"
+              onClick={(e) => {
+                e.preventDefault();
+                toggleSidebar();
+              }}
+              role="button"
+              aria-label="Menüyü Aç/Kapat"
+              title="Menüyü Aç/Kapat"
+              style={{
+                display: isMobile ? 'block' : 'none',
+                padding: '8px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              <i className="fas fa-bars" />
+            </a>
+          </li>
           <li className="nav-item">
             <a
               href="#"
@@ -108,7 +169,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               className="btn btn-outline-secondary border"
               onClick={() => {
                 logout();
-                window.location.href = "/login";
+                navigate("/login", { replace: true });
               }}
             >
               <i className="fas fa-sign-out-alt" /> Çıkış Yap
@@ -117,7 +178,20 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </ul>
       </nav>
 
-      <aside className="main-sidebar sidebar-dark-secondary elevation-4">
+      <aside 
+        className="main-sidebar sidebar-dark-secondary elevation-4"
+        style={{
+          ...(isMobile ? {
+            position: 'fixed',
+            top: 0,
+            left: sidebarOpen ? 0 : '-250px',
+            zIndex: 1030,
+            transition: 'left 0.3s ease-in-out',
+            height: '100vh',
+            overflowY: 'auto',
+          } : {}),
+        }}
+      >
         <a
           href="#"
           className="brand-link"
@@ -410,6 +484,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
       </aside>
 
       <div className="content-wrapper">
+        {sidebarOpen && isMobile && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1029,
+            }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <section className="content pt-3">
           <div className="container-fluid">{children}</div>
         </section>

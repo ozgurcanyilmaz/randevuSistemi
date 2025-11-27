@@ -72,10 +72,3 @@ namespace RandevuSistemi.Api.Data
         }
     }
 }
-
-
-
-
-
-
-

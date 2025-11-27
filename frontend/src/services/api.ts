@@ -10,6 +10,24 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp * 1000; 
+      if (Date.now() >= exp) {
+        logout();
+        if (window.location.pathname !== "/login") {
+          window.location.replace("/login");
+        }
+        return Promise.reject(new Error("Token expired"));
+      }
+    } catch {
+      logout();
+      if (window.location.pathname !== "/login") {
+        window.location.replace("/login");
+      }
+      return Promise.reject(new Error("Invalid token"));
+    }
+    
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,7 +45,9 @@ api.interceptors.response.use(
 
       if (!isLoginPage && hasToken) {
         logout();
-        window.location.replace("/login");
+        if (window.location.pathname !== "/login") {
+          window.location.replace("/login");
+        }
       }
     }
     return Promise.reject(error);

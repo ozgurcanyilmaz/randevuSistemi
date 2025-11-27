@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import React, { type PropsWithChildren, type CSSProperties } from "react";
 import {
   commonStyles,
   colors,
@@ -26,10 +26,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle }) => (
 interface CardProps extends PropsWithChildren {
   title?: string;
   className?: string;
+  style?: CSSProperties;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseEnter?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ title, children, className }) => (
-  <div style={commonStyles.card} className={className}>
+export const Card: React.FC<CardProps> = ({ title, children, className, style, onClick, onMouseEnter, onMouseLeave }) => (
+  <div 
+    style={{ ...commonStyles.card, ...style }} 
+    className={className} 
+    onClick={onClick}
+    onMouseEnter={onMouseEnter}
+    onMouseLeave={onMouseLeave}
+  >
     {title && <h2 style={commonStyles.cardHeader}>{title}</h2>}
     {children}
   </div>
@@ -51,28 +61,34 @@ interface ButtonProps {
   type?: "button" | "submit";
   children: React.ReactNode;
   fullWidth?: boolean;
+  title?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps & { style?: CSSProperties }> = ({
   variant = "primary",
   onClick,
   disabled,
   type = "button",
   children,
   fullWidth,
+  style,
+  title,
 }) => {
   const baseStyle = disabled
     ? commonStyles.button.disabled
     : commonStyles.button[variant];
-  const style = fullWidth ? { ...baseStyle, width: "100%" } : baseStyle;
+  const finalStyle = fullWidth
+    ? { ...baseStyle, width: "100%", ...style }
+    : { ...baseStyle, ...style };
   const hoverHandlers = !disabled ? getButtonHoverHandlers(variant) : {};
 
   return (
     <button
       type={type}
-      style={style}
+      style={finalStyle}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       {...hoverHandlers}
     >
       {children}
@@ -83,10 +99,11 @@ export const Button: React.FC<ButtonProps> = ({
 interface BadgeProps {
   variant: "success" | "warning" | "error" | "primary" | "gray";
   children: React.ReactNode;
+  style?: CSSProperties;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ variant, children }) => (
-  <span style={commonStyles.badge[variant]}>{children}</span>
+export const Badge: React.FC<BadgeProps> = ({ variant, children, style }) => (
+  <span style={{ ...commonStyles.badge[variant], ...style }}>{children}</span>
 );
 
 interface EmptyStateProps {
@@ -135,47 +152,89 @@ export const Modal: React.FC<ModalProps> = ({
 };
 
 interface InputProps {
-  label: string;
+  label?: string;
   type?: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: string | number;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
   error?: string;
+  readOnly?: boolean;
+  className?: string;
+  style?: CSSProperties;
+  name?: string;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  maxLength?: number;
+  min?: string | number;
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  disabled,
-  required,
-  error,
-}) => (
-  <div>
-    <label style={commonStyles.formLabel}>
-      {label} {required && "*"}
-    </label>
-    <input
-      type={type}
-      style={commonStyles.input}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-    />
-    {error && (
-      <div
-        style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}
-      >
-        {error}
-      </div>
-    )}
-  </div>
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      label,
+      type = "text",
+      value,
+      onChange,
+      placeholder,
+      disabled,
+      required,
+      error,
+      readOnly,
+      className,
+      style,
+      name,
+      onBlur,
+      onFocus,
+      onKeyPress,
+      onKeyDown,
+      maxLength,
+      min,
+    },
+    ref
+  ) => (
+    <div>
+      {label && (
+        <label style={commonStyles.formLabel}>
+          {label} {required && "*"}
+        </label>
+      )}
+      <input
+        ref={ref}
+        type={type}
+        name={name}
+        style={{
+          ...commonStyles.input,
+          ...(readOnly && { background: colors.gray[50], cursor: "not-allowed" }),
+          ...style,
+        }}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        onKeyPress={onKeyPress}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        readOnly={readOnly}
+        className={className}
+        maxLength={maxLength}
+        min={min !== undefined ? String(min) : undefined}
+      />
+      {error && (
+        <div
+          style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}
+        >
+          {error}
+        </div>
+      )}
+    </div>
+  )
 );
+Input.displayName = "Input";
 
 interface SelectOption {
   value: string | number;
@@ -183,46 +242,76 @@ interface SelectOption {
 }
 
 interface SelectProps {
-  label: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  label?: string;
+  value?: string | number;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: SelectOption[];
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
+  error?: string;
+  style?: CSSProperties;
+  className?: string;
+  name?: string;
+  onBlur?: (e: React.FocusEvent<HTMLSelectElement>) => void;
+  ref?: React.Ref<HTMLSelectElement>;
 }
 
-export const Select: React.FC<SelectProps> = ({
-  label,
-  value,
-  onChange,
-  options,
-  placeholder,
-  disabled,
-  required,
-}) => (
-  <div>
-    <label style={commonStyles.formLabel}>
-      {label} {required && "*"}
-    </label>
-    <select
-      style={commonStyles.select}
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  </div>
+export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  (
+    {
+      label,
+      value,
+      onChange,
+      options,
+      placeholder,
+      disabled,
+      required,
+      error,
+      style,
+      className,
+      name,
+      onBlur,
+    },
+    ref
+  ) => (
+    <div>
+      {label && (
+        <label style={commonStyles.formLabel}>
+          {label} {required && "*"}
+        </label>
+      )}
+      <select
+        ref={ref}
+        name={name}
+        style={{ ...commonStyles.select, ...style }}
+        className={className}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        disabled={disabled}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      {error && (
+        <div
+          style={{ color: colors.error[600], fontSize: "12px", marginTop: "4px" }}
+        >
+          {error}
+        </div>
+      )}
+    </div>
+  )
 );
+Select.displayName = "Select";
 
 interface TextareaProps {
-  label: string;
+  label?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
@@ -241,9 +330,11 @@ export const Textarea: React.FC<TextareaProps> = ({
   required,
 }) => (
   <div>
-    <label style={commonStyles.formLabel}>
-      {label} {required && "*"}
-    </label>
+    {label && (
+      <label style={commonStyles.formLabel}>
+        {label} {required && "*"}
+      </label>
+    )}
     <textarea
       style={commonStyles.textarea}
       value={value}

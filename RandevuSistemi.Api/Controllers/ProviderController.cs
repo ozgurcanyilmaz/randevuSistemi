@@ -25,9 +25,47 @@ namespace RandevuSistemi.Api.Controllers
             return await _db.ServiceProviderProfiles.Include(p => p.WorkingHours).Include(p => p.BreakPeriods).FirstOrDefaultAsync(p => p.UserId == userId);
         }
 
+        [HttpGet("parameters")]
+        public async Task<IActionResult> GetParameters()
+        {
+            var profile = await GetMyProfile();
+            if (profile == null) return NotFound("Provider profile not found");
+
+            var workingHours = profile.WorkingHours.Select(w => new
+            {
+                dayOfWeek = (int)w.DayOfWeek,
+                startTime = w.StartTime.ToString("HH:mm"),
+                endTime = w.EndTime.ToString("HH:mm")
+            }).ToList();
+
+            var breaks = profile.BreakPeriods.Select(b => new
+            {
+                dayOfWeek = (int)b.DayOfWeek,
+                startTime = b.StartTime.ToString("HH:mm"),
+                endTime = b.EndTime.ToString("HH:mm")
+            }).ToList();
+
+            return Ok(new
+            {
+                sessionDurationMinutes = profile.SessionDurationMinutes,
+                workingHours,
+                breaks
+            });
+        }
+
         [HttpPost("session-duration/{minutes:int}")]
         public async Task<IActionResult> SetSessionDuration(int minutes)
         {
+            if (minutes < 5 || minutes > 240)
+            {
+                return BadRequest("Session duration must be between 5 and 240 minutes.");
+            }
+
+            if (minutes % 5 != 0)
+            {
+                return BadRequest("Session duration must be a multiple of 5 minutes.");
+            }
+
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
             profile.SessionDurationMinutes = minutes;
@@ -39,6 +77,19 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("working-hours")]
         public async Task<IActionResult> SetWorkingHours([FromBody] List<WorkingHoursRequest> hours)
         {
+            if (hours == null || hours.Count == 0)
+            {
+                return BadRequest("Working hours list cannot be empty.");
+            }
+
+            foreach (var h in hours)
+            {
+                if (h.StartTime >= h.EndTime)
+                {
+                    return BadRequest($"Start time must be before end time for {h.DayOfWeek}.");
+                }
+            }
+
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
             var existing = _db.WorkingHours.Where(w => w.ServiceProviderProfileId == profile.Id);
@@ -61,6 +112,19 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("breaks")]
         public async Task<IActionResult> SetBreaks([FromBody] List<BreakRequest> breaks)
         {
+            if (breaks == null)
+            {
+                return BadRequest("Breaks list cannot be null.");
+            }
+
+            foreach (var b in breaks)
+            {
+                if (b.StartTime >= b.EndTime)
+                {
+                    return BadRequest($"Break start time must be before end time for {b.DayOfWeek}.");
+                }
+            }
+
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
             var existing = _db.BreakPeriods.Where(b => b.ServiceProviderProfileId == profile.Id);
@@ -111,13 +175,23 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments/add-note")]
         public async Task<IActionResult> AddProviderNote([FromBody] AddProviderNoteRequest req)
         {
+            if (req.AppointmentId <= 0)
+            {
+                return BadRequest("Invalid appointment ID");
+            }
+
+            if (req.ProviderNotes != null && req.ProviderNotes.Length > 2000)
+            {
+                return BadRequest("Provider notes must be at most 2000 characters");
+            }
+
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
 
             var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == req.AppointmentId && a.ServiceProviderProfileId == profile.Id);
             if (appt == null) return NotFound("Appointment not found");
 
-            appt.ProviderNotes = req.ProviderNotes;
+            appt.ProviderNotes = req.ProviderNotes?.Trim();
             await _db.SaveChangesAsync();
             return Ok(new { appt.Id, appt.ProviderNotes });
         }
@@ -126,6 +200,16 @@ namespace RandevuSistemi.Api.Controllers
         [HttpPost("appointments/create-followup")]
         public async Task<IActionResult> CreateFollowUp([FromBody] CreateFollowUpRequest req)
         {
+            if (string.IsNullOrWhiteSpace(req.UserId))
+            {
+                return BadRequest("UserId is required");
+            }
+
+            if (req.Notes != null && req.Notes.Length > 1000)
+            {
+                return BadRequest("Notes must be at most 1000 characters");
+            }
+
             var profile = await GetMyProfile();
             if (profile == null) return NotFound("Provider profile not found");
 
@@ -152,7 +236,7 @@ namespace RandevuSistemi.Api.Controllers
                 Date = req.Date,
                 StartTime = req.Start,
                 EndTime = req.End,
-                Notes = req.Notes
+                Notes = req.Notes?.Trim()
             };
             _db.Appointments.Add(appt);
             await _db.SaveChangesAsync();
