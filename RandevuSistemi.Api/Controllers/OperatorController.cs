@@ -162,6 +162,7 @@ namespace RandevuSistemi.Api.Controllers
             var q = _db.Appointments
                 .Include(a => a.User)
                 .Include(a => a.ServiceProvider)
+                    .ThenInclude(sp => sp.User)
                 .Where(a => a.ServiceProvider.BranchId == branchId)
                 .AsQueryable();
             if (date.HasValue)
@@ -174,7 +175,16 @@ namespace RandevuSistemi.Api.Controllers
                 q = q.Where(a => (a.User.FullName != null && a.User.FullName.ToLower().Contains(nameLower)) || (a.User.Email != null && a.User.Email.ToLower().Contains(nameLower)));
             }
             var items = await q.OrderBy(a => a.Date).ThenBy(a => a.StartTime)
-                .Select(a => new { a.Id, a.Date, a.StartTime, a.EndTime, a.ServiceProviderProfileId, User = a.User.FullName ?? a.User.Email, a.CheckedInAt })
+                .Select(a => new {
+                    a.Id,
+                    a.Date,
+                    a.StartTime,
+                    a.EndTime,
+                    a.ServiceProviderProfileId,
+                    User = a.User.FullName ?? a.User.Email,
+                    Provider = a.ServiceProvider.User.FullName ?? a.ServiceProvider.User.Email,
+                    a.CheckedInAt
+                })
                 .ToListAsync();
             return Ok(items);
         }

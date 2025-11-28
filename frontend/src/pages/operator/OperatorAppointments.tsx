@@ -22,6 +22,7 @@ type SearchItem = {
   endTime: string;
   serviceProviderProfileId: number;
   user: string;
+  provider?: string;
   checkedInAt?: string;
 };
 
@@ -287,105 +288,109 @@ export default function OperatorHome() {
 
             <div style={commonStyles.table.container}>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead
-                    style={{
-                      background: colors.gray[50],
-                      borderBottom: `1px solid ${colors.gray[200]}`,
-                    }}
-                  >
-                    <tr>
-                      <th style={commonStyles.table.header}>📅 Tarih</th>
-                      <th style={commonStyles.table.header}>⏰ Başlangıç</th>
-                      <th style={commonStyles.table.header}>⏰ Bitiş</th>
-                      <th style={commonStyles.table.header}>👤 Kullanıcı</th>
-                      <th style={commonStyles.table.header}>Durum</th>
-                      <th
-                        style={{
-                          ...commonStyles.table.header,
-                          textAlign: "right",
-                        }}
-                      >
-                        İşlem
-                      </th>
-                    </tr>
-                  </thead>
-                </table>
                 <div
                   style={{
                     maxHeight: "60vh",
                     overflowY: "auto",
-                    overflowX: "auto",
                   }}
                 >
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <tbody>
-                    {items.length === 0 ? (
+                    <thead
+                      style={{
+                        background: colors.gray[50],
+                        borderBottom: `1px solid ${colors.gray[200]}`,
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 10,
+                      }}
+                    >
                       <tr>
-                        <td
-                          colSpan={6}
+                        <th style={commonStyles.table.header}>📅 Tarih</th>
+                        <th style={commonStyles.table.header}>⏰ Başlangıç</th>
+                        <th style={commonStyles.table.header}>⏰ Bitiş</th>
+                        <th style={commonStyles.table.header}>👤 Kullanıcı</th>
+                        <th style={commonStyles.table.header}>👨‍⚕️ İlgili</th>
+                        <th style={commonStyles.table.header}>Durum</th>
+                        <th
                           style={{
-                            padding: "48px 24px",
-                            textAlign: "center",
-                            color: colors.gray[400],
-                            fontSize: "clamp(12px, 2vw, 14px)",
+                            ...commonStyles.table.header,
+                            textAlign: "right",
                           }}
                         >
-                          Henüz randevu bulunmuyor. Arama yaparak randevuları
-                          görüntüleyin.
-                        </td>
+                          İşlem
+                        </th>
                       </tr>
-                    ) : (
-                      items.map((i) => (
-                        <tr
-                          key={i.id}
-                          style={commonStyles.table.row}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = colors.gray[50];
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "white";
-                          }}
-                        >
-                          <td style={commonStyles.table.cell}>
-                            {formatDate(i.date)}
-                          </td>
-                          <td style={commonStyles.table.cell}>
-                            {formatTime(i.startTime)}
-                          </td>
-                          <td style={commonStyles.table.cell}>
-                            {formatTime(i.endTime)}
-                          </td>
-                          <td style={commonStyles.table.cell}>{i.user}</td>
-                          <td style={commonStyles.table.cell}>
-                            {i.checkedInAt ? (
-                              <Badge variant="success">✓ Onaylandı</Badge>
-                            ) : (
-                              <Badge variant="warning">⏳ Bekliyor</Badge>
-                            )}
-                          </td>
+                    </thead>
+                    <tbody>
+                      {items.length === 0 ? (
+                        <tr>
                           <td
+                            colSpan={7}
                             style={{
-                              ...commonStyles.table.cell,
-                              textAlign: "right",
+                              padding: "48px 24px",
+                              textAlign: "center",
+                              color: colors.gray[400],
+                              fontSize: "clamp(12px, 2vw, 14px)",
                             }}
                           >
-                            {!i.checkedInAt && (
-                              <Button
-                                variant="success"
-                                onClick={() => checkIn(i.id)}
-                                style={{
-                                  fontSize: "clamp(11px, 1.5vw, 12px)",
-                                  padding: "6px 16px",
-                                }}
-                              >
-                                Onayla
-                              </Button>
-                            )}
+                            Henüz randevu bulunmuyor. Arama yaparak randevuları
+                            görüntüleyin.
                           </td>
                         </tr>
-                      ))
-                    )}
+                      ) : (
+                        items.map((i) => (
+                          <tr
+                            key={i.id}
+                            style={commonStyles.table.row}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = colors.gray[50];
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "white";
+                            }}
+                          >
+                            <td style={commonStyles.table.cell}>
+                              {formatDate(i.date)}
+                            </td>
+                            <td style={commonStyles.table.cell}>
+                              {formatTime(i.startTime)}
+                            </td>
+                            <td style={commonStyles.table.cell}>
+                              {formatTime(i.endTime)}
+                            </td>
+                            <td style={commonStyles.table.cell}>{i.user}</td>
+                            <td style={commonStyles.table.cell}>
+                              {i.provider || "Bilinmiyor"}
+                            </td>
+                            <td style={commonStyles.table.cell}>
+                              {i.checkedInAt ? (
+                                <Badge variant="success">✓ Onaylandı</Badge>
+                              ) : (
+                                <Badge variant="warning">⏳ Bekliyor</Badge>
+                              )}
+                            </td>
+                            <td
+                              style={{
+                                ...commonStyles.table.cell,
+                                textAlign: "right",
+                              }}
+                            >
+                              {!i.checkedInAt && (
+                                <Button
+                                  variant="success"
+                                  onClick={() => checkIn(i.id)}
+                                  style={{
+                                    fontSize: "clamp(11px, 1.5vw, 12px)",
+                                    padding: "6px 16px",
+                                  }}
+                                >
+                                  Onayla
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
