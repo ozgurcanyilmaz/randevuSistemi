@@ -50,6 +50,7 @@ export default function App() {
         <Route path="/admin/roles" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/roles/assign-provider" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/admin/roles/assign-operator" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
+        <Route path="/admin/roles/user-operations" element={<PrivateRoute><RoleRoute role="Admin"><AppLayout><Roles /></AppLayout></RoleRoute></PrivateRoute>} />
         
         <Route path="/operator" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorHome /></AppLayout></RoleRoute></PrivateRoute>} />
         <Route path="/operator/dashboard" element={<PrivateRoute><RoleRoute role="Operator"><AppLayout><OperatorDashboard /></AppLayout></RoleRoute></PrivateRoute>} />

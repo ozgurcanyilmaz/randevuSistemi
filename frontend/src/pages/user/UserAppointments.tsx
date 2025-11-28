@@ -22,6 +22,7 @@ type Appt = {
   endTime: string;
   branchName: string;
   providerId: number;
+  providerName: string;
   providerNotes?: string;
 };
 
@@ -151,28 +152,27 @@ export default function UserAppointments() {
   };
 
   const now = new Date();
-  const sorted = useMemo(
-    () => [...items].sort((a, b) => toDate(a).getTime() - toDate(b).getTime()),
-    [items]
-  );
+  const upcoming = useMemo(() => {
+    const filtered = items.filter((a) => toDate(a).getTime() >= now.getTime());
+    return [...filtered].sort((a, b) => toDate(a).getTime() - toDate(b).getTime());
+  }, [items, now]);
 
-  const upcoming = useMemo(
-    () => sorted.filter((a) => toDate(a).getTime() >= now.getTime()),
-    [sorted, now]
-  );
+  const past = useMemo(() => {
+    const filtered = items.filter((a) => toDate(a).getTime() < now.getTime());
+    return [...filtered].sort((a, b) => toDate(b).getTime() - toDate(a).getTime());
+  }, [items, now]);
 
-  const past = useMemo(
-    () => sorted.filter((a) => toDate(a).getTime() < now.getTime()),
-    [sorted, now]
-  );
+  const all = useMemo(() => {
+    return [...items].sort((a, b) => toDate(b).getTime() - toDate(a).getTime());
+  }, [items]);
 
   const dataForTab =
-    activeTab === "upcoming" ? upcoming : activeTab === "past" ? past : sorted;
+    activeTab === "upcoming" ? upcoming : activeTab === "past" ? past : all;
 
   const tabs = [
     { id: "upcoming", label: `⏳ Yaklaşan (${upcoming.length})` },
     { id: "past", label: `📜 Geçmiş (${past.length})` },
-    { id: "all", label: `📁 Tümü (${sorted.length})` },
+    { id: "all", label: `📁 Tümü (${all.length})` },
   ];
 
   return (
@@ -246,6 +246,16 @@ export default function UserAppointments() {
                         }}
                       >
                         🏪 {a.branchName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(13px, 2vw, 15px)",
+                          color: colors.gray[700],
+                          marginBottom: "6px",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        👤 {a.providerName}
                       </div>
                       <div
                         style={{

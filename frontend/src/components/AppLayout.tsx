@@ -39,8 +39,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
       }
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const adminDepartmentsMatch = useMemo(
@@ -76,7 +76,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
       } catch {
         const email = localStorage.getItem("email");
         if (email) {
-          setUserProfile({ email, fullName: null, phoneNumber: null, tcKimlikNo: null, gender: null, address: null, heightCm: null, weightKg: null });
+          setUserProfile({
+            email,
+            fullName: null,
+            phoneNumber: null,
+            tcKimlikNo: null,
+            gender: null,
+            address: null,
+            heightCm: null,
+            weightKg: null,
+          });
         }
       } finally {
         setLoadingProfile(false);
@@ -115,22 +124,29 @@ export default function AppLayout({ children }: PropsWithChildren) {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (sidebarOpen && isMobile) {
-        const sidebar = document.querySelector('.main-sidebar');
-        const hamburger = document.querySelector('.nav-link[aria-label="Menüyü Aç/Kapat"]');
+        const sidebar = document.querySelector(".main-sidebar");
+        const hamburger = document.querySelector(
+          '.nav-link[aria-label="Menüyü Aç/Kapat"]'
+        );
         const target = e.target as HTMLElement;
-        if (sidebar && !sidebar.contains(target) && hamburger && !hamburger.contains(target)) {
+        if (
+          sidebar &&
+          !sidebar.contains(target) &&
+          hamburger &&
+          !hamburger.contains(target)
+        ) {
           setSidebarOpen(false);
         }
       }
     };
     if (sidebarOpen && isMobile) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [sidebarOpen, isMobile]);
 
   return (
-    <div className={`wrapper ${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`wrapper ${sidebarOpen ? "sidebar-open" : ""}`}>
       <nav className="main-header navbar navbar-expand navbar-white navbar-light">
         <ul className="navbar-nav">
           <li className="nav-item">
@@ -145,9 +161,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
               aria-label="Menüyü Aç/Kapat"
               title="Menüyü Aç/Kapat"
               style={{
-                display: isMobile ? 'block' : 'none',
-                padding: '8px 12px',
-                cursor: 'pointer',
+                display: isMobile ? "block" : "none",
+                padding: "8px 12px",
+                cursor: "pointer",
               }}
             >
               <i className="fas fa-bars" />
@@ -220,18 +236,20 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </ul>
       </nav>
 
-      <aside 
+      <aside
         className="main-sidebar sidebar-dark-secondary elevation-4"
         style={{
-          ...(isMobile ? {
-            position: 'fixed',
-            top: 0,
-            left: sidebarOpen ? 0 : '-250px',
-            zIndex: 1030,
-            transition: 'left 0.3s ease-in-out',
-            height: '100vh',
-            overflowY: 'auto',
-          } : {}),
+          ...(isMobile
+            ? {
+                position: "fixed",
+                top: 0,
+                left: sidebarOpen ? 0 : "-250px",
+                zIndex: 1030,
+                transition: "left 0.3s ease-in-out",
+                height: "100vh",
+                overflowY: "auto",
+              }
+            : {}),
         }}
       >
         <a
@@ -428,6 +446,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     >
                       <li className="nav-item">
                         <NavLink
+                          to="/admin/roles/user-operations"
+                          end
+                          className={({ isActive }) =>
+                            `nav-link${isActive ? " active" : ""}`
+                          }
+                        >
+                          <i className="far fa-circle nav-icon" />
+                          <p>Kullanıcı İşlemleri</p>
+                        </NavLink>
+                      </li>
+                      <li className="nav-item">
+                        <NavLink
                           to="/admin/roles"
                           end
                           className={({ isActive }) =>
@@ -459,7 +489,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
                           }
                         >
                           <i className="far fa-circle nav-icon" />
-                          <p style={{ fontSize: "0.85rem" }}>Operatörü Şubeye Atama</p>
+                          <p style={{ fontSize: "0.96rem" }}>
+                            Operatörü Şubeye Atama
+                          </p>
                         </NavLink>
                       </li>
                     </ul>
@@ -591,9 +623,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
         {sidebarOpen && isMobile && (
           <div
             style={{
-              position: 'fixed',
+              position: "fixed",
               inset: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
+              background: "rgba(0, 0, 0, 0.5)",
               zIndex: 1029,
             }}
             onClick={() => setSidebarOpen(false)}

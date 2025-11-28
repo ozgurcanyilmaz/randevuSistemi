@@ -287,8 +287,9 @@ namespace RandevuSistemi.Api.Controllers
             var userId = User.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Value;
             var appts = await _db.Appointments
                 .Include(a => a.ServiceProvider).ThenInclude(sp => sp.Branch)
+                .Include(a => a.ServiceProvider).ThenInclude(sp => sp.User)
                 .Where(a => a.UserId == userId)
-                .OrderByDescending(a => a.Date).ThenBy(a => a.StartTime)
+                .OrderByDescending(a => a.Date).ThenByDescending(a => a.StartTime)
                 .Select(a => new
                 {
                     a.Id,
@@ -296,6 +297,7 @@ namespace RandevuSistemi.Api.Controllers
                     a.StartTime,
                     a.EndTime,
                     ProviderId = a.ServiceProviderProfileId,
+                    ProviderName = a.ServiceProvider.User.FullName ?? a.ServiceProvider.User.Email,
                     BranchName = a.ServiceProvider.Branch.Name,
                     a.ProviderNotes
                 })
