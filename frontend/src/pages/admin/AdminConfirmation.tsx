@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import {
@@ -65,6 +65,13 @@ export default function AdminConfirmation() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }, []);
 
   useEffect(() => {
     if (location.pathname.endsWith("/create")) setActiveTab("create");
@@ -210,6 +217,7 @@ export default function AdminConfirmation() {
                 <Input
                   label="Tarih"
                   type="date"
+                  min={todayStr}
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
@@ -382,6 +390,7 @@ export default function AdminConfirmation() {
                 <Input
                   label="Tarih"
                   type="date"
+                  min={todayStr}
                   value={slotDate}
                   onChange={async (e) => {
                     const d = e.target.value;
