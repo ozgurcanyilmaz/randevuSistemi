@@ -3,7 +3,7 @@ import { getRoles, logout } from "../services/auth";
 import { api } from "../services/api";
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { colors } from "../styles/commonStyles";
+import { colors, breakpoints } from "../styles/commonStyles";
 
 type UserProfile = {
   email: string;
@@ -34,8 +34,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 992);
-      if (window.innerWidth >= 992) {
+      setIsMobile(window.innerWidth < breakpoints.lg);
+      if (window.innerWidth >= breakpoints.lg) {
         setSidebarOpen(false);
       }
     };
@@ -311,7 +311,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               e.currentTarget.style.color = colors.gray[700];
             }}
           >
-            <span style={{ fontSize: "16px" }}>➜]</span>
+            <span style={{ fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>➜]</span>
             <span>Çıkış</span>
           </button>
         </div>
