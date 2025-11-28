@@ -3,6 +3,7 @@ import { getRoles, logout } from "../services/auth";
 import { api } from "../services/api";
 import type { PropsWithChildren } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { colors } from "../styles/commonStyles";
 
 type UserProfile = {
   email: string;
@@ -39,8 +40,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
       }
     };
     checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const adminDepartmentsMatch = useMemo(
@@ -76,16 +77,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       } catch {
         const email = localStorage.getItem("email");
         if (email) {
-          setUserProfile({
-            email,
-            fullName: null,
-            phoneNumber: null,
-            tcKimlikNo: null,
-            gender: null,
-            address: null,
-            heightCm: null,
-            weightKg: null,
-          });
+          setUserProfile({ email, fullName: null, phoneNumber: null, tcKimlikNo: null, gender: null, address: null, heightCm: null, weightKg: null });
         }
       } finally {
         setLoadingProfile(false);
@@ -124,175 +116,272 @@ export default function AppLayout({ children }: PropsWithChildren) {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (sidebarOpen && isMobile) {
-        const sidebar = document.querySelector(".main-sidebar");
-        const hamburger = document.querySelector(
-          '.nav-link[aria-label="Menüyü Aç/Kapat"]'
-        );
+        const sidebar = document.querySelector('aside');
+        const hamburger = document.querySelector('button[aria-label="Menüyü Aç/Kapat"]');
         const target = e.target as HTMLElement;
-        if (
-          sidebar &&
-          !sidebar.contains(target) &&
-          hamburger &&
-          !hamburger.contains(target)
-        ) {
+        if (sidebar && !sidebar.contains(target) && hamburger && !hamburger.contains(target)) {
           setSidebarOpen(false);
         }
       }
     };
     if (sidebarOpen && isMobile) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [sidebarOpen, isMobile]);
 
   return (
-    <div className={`wrapper ${sidebarOpen ? "sidebar-open" : ""}`}>
-      <nav className="main-header navbar navbar-expand navbar-white navbar-light">
-        <ul className="navbar-nav">
-          <li className="nav-item">
-            <a
-              href="#"
-              className="nav-link"
-              onClick={(e) => {
-                e.preventDefault();
-                toggleSidebar();
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <nav
+        style={{
+          position: "fixed",
+          top: 0,
+          left: isMobile ? 0 : "260px",
+          right: 0,
+          height: "60px",
+          background: "white",
+          borderBottom: `1px solid ${colors.gray[200]}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 20px",
+          zIndex: 999,
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+          transition: "left 0.3s ease-in-out",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "40px",
+                height: "40px",
+                borderRadius: "8px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: colors.gray[700],
+                transition: "all 0.2s",
               }}
-              role="button"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = colors.gray[100];
+                e.currentTarget.style.color = colors.gray[900];
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = colors.gray[700];
+              }}
               aria-label="Menüyü Aç/Kapat"
               title="Menüyü Aç/Kapat"
-              style={{
-                display: isMobile ? "block" : "none",
-                padding: "8px 12px",
-                cursor: "pointer",
-              }}
             >
-              <i className="fas fa-bars" />
-            </a>
-          </li>
-          <li className="nav-item">
-            <a
-              href="#"
-              className="nav-link"
+              <span style={{ fontSize: "20px" }}>☰</span>
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              goHome();
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "40px",
+              height: "40px",
+              borderRadius: "8px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              color: colors.gray[700],
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = colors.gray[100];
+              e.currentTarget.style.color = colors.primary[600];
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = colors.gray[700];
+            }}
+            aria-label="Anasayfa"
+            title="Anasayfa"
+          >
+            <span style={{ fontSize: "18px" }}>🏠︎</span>
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {isProvider && (
+            <button
               onClick={(e) => {
                 e.preventDefault();
-                goHome();
+                navigate("/provider");
               }}
-              role="button"
-              aria-label="Anasayfa"
-              title="Anasayfa"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "40px",
+                height: "40px",
+                borderRadius: "8px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: colors.gray[700],
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = colors.gray[100];
+                e.currentTarget.style.color = colors.primary[600];
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = colors.gray[700];
+              }}
+              title="Parametreler"
             >
-              <i className="fas fa-home" />
-            </a>
-          </li>
-        </ul>
-        <ul className="navbar-nav ml-auto">
-          {isProvider && (
-            <li className="nav-item">
-              <a
-                href="#"
-                className="nav-link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/provider");
-                }}
-                title="Parametreler"
-              >
-                <i className="fas fa-cog" />
-              </a>
-            </li>
+              <span style={{ fontSize: "18px" }}>⚙️</span>
+            </button>
           )}
 
           {!isAdmin && !isProvider && !isOperator && (
-            <li className="nav-item">
-              <a
-                href="#"
-                className="nav-link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate("/profile");
-                }}
-                title="Profilim"
-              >
-                <i className="fas fa-user" />
-              </a>
-            </li>
-          )}
-
-          <li className="nav-item">
             <button
-              className="btn btn-outline-secondary border"
-              onClick={() => {
-                logout();
-                navigate("/login", { replace: true });
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/profile");
               }}
               style={{
-                fontSize: "13px",
-                padding: "6px 12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "40px",
+                height: "40px",
+                borderRadius: "8px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: colors.gray[700],
+                transition: "all 0.2s",
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = colors.gray[100];
+                e.currentTarget.style.color = colors.primary[600];
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = colors.gray[700];
+              }}
+              title="Profilim"
             >
-              <i className="fas fa-sign-out-alt" /> Çıkış
+              <span style={{ fontSize: "18px" }}>👤</span>
             </button>
-          </li>
-        </ul>
+          )}
+
+          <button
+            onClick={() => {
+              logout();
+              navigate("/login", { replace: true });
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.gray[300]}`,
+              background: "transparent",
+              cursor: "pointer",
+              color: colors.gray[700],
+              fontSize: "14px",
+              fontWeight: 500,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = colors.error[50];
+              e.currentTarget.style.borderColor = colors.error[300];
+              e.currentTarget.style.color = colors.error[700];
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = colors.gray[300];
+              e.currentTarget.style.color = colors.gray[700];
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>➜]</span>
+            <span>Çıkış</span>
+          </button>
+        </div>
       </nav>
 
-      <aside
-        className="main-sidebar sidebar-dark-secondary elevation-4"
+      <aside 
         style={{
-          ...(isMobile
-            ? {
-                position: "fixed",
-                top: 0,
-                left: sidebarOpen ? 0 : "-250px",
-                zIndex: 1030,
-                transition: "left 0.3s ease-in-out",
-                height: "100vh",
-                overflowY: "auto",
-              }
-            : {}),
+          width: "260px",
+          background: `linear-gradient(180deg, ${colors.gray[800]} 0%, ${colors.gray[900]} 100%)`,
+          boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          overflowY: "auto",
+          overflowX: "hidden",
+          zIndex: 1001,
+          ...(isMobile ? {
+            left: sidebarOpen ? 0 : '-260px',
+            transition: 'left 0.3s ease-in-out',
+          } : {}),
         }}
       >
-        <a
-          href="#"
-          className="brand-link"
+        <div
           onClick={(e) => {
             e.preventDefault();
             goHome();
           }}
-          title="Randevu Sistemi"
           style={{
-            padding: "12px 16px",
+            padding: "20px 16px",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            gap: "12px",
             borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+            cursor: "pointer",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
           }}
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "8px",
-              background: "rgba(255, 255, 255, 0.15)",
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              background: `linear-gradient(135deg, ${colors.primary[500]} 0%, ${colors.primary[600]} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "20px",
+              fontSize: "24px",
               flexShrink: 0,
+              boxShadow: `0 4px 12px ${colors.primary[500]}4D`,
             }}
           >
             📅
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
-              className="brand-text font-weight-light"
               style={{
-                fontSize: "16px",
-                fontWeight: 600,
+                fontSize: "18px",
+                fontWeight: 700,
                 color: "#fff",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                marginBottom: "4px",
               }}
             >
               Randevu Sistemi
@@ -300,9 +389,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
             {!loadingProfile && (
               <div
                 style={{
-                  fontSize: "11px",
-                  color: "rgba(255, 255, 255, 0.7)",
-                  marginTop: "2px",
+                  fontSize: "12px",
+                  color: "rgba(255, 255, 255, 0.6)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -312,39 +400,91 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </div>
             )}
           </div>
-        </a>
+        </div>
 
-        <div className="sidebar">
-          <nav className="mt-2">
+        <div style={{ padding: "16px 0" }}>
+          <nav>
             <ul
-              className="nav nav-pills nav-sidebar flex-column"
+              style={{
+                listStyle: "none",
+                margin: 0,
+                padding: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+              }}
               role="menu"
-              data-accordion="false"
             >
               {!isAdmin && !isProvider && !isOperator && (
                 <>
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: pathname === "/" ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: pathname === "/" ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: pathname === "/" ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: pathname === "/" ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/") {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/") {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-search" />
-                      <p>Randevu Al</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>🔍</span>
+                      <span>Randevu Al</span>
                     </NavLink>
                   </li>
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/my-appointments"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: pathname === "/my-appointments" ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: pathname === "/my-appointments" ? "rgba(59, 130, 246, 0.2)" : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: pathname === "/my-appointments" ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: pathname === "/my-appointments" ? "3px solid #3b82f6" : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/my-appointments") {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/my-appointments") {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-calendar" />
-                      <p>Randevularım</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📅</span>
+                      <span>Randevularım</span>
                     </NavLink>
                   </li>
                 </>
@@ -352,146 +492,367 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
               {isAdmin && (
                 <>
-                  <li className="nav-header">Admin</li>
+                  <li style={{ padding: "8px 16px", marginTop: "8px" }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "rgba(255, 255, 255, 0.5)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Admin
+                    </div>
+                  </li>
 
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/admin"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${
-                          isActive || adminRootActive ? " active" : ""
-                        }`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: (pathname === "/admin" || adminRootActive) ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: (pathname === "/admin" || adminRootActive) ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: (pathname === "/admin" || adminRootActive) ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: (pathname === "/admin" || adminRootActive) ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/admin" && !adminRootActive) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/admin" && !adminRootActive) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-tachometer-alt" />
-                      <p>Yönetim Özeti</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📊</span>
+                      <span>Yönetim Özeti</span>
                     </NavLink>
                   </li>
 
-                  <li
-                    className={`nav-item has-treeview ${
-                      openDeps ? "menu-open" : ""
-                    }`}
-                  >
+                  <li>
                     <a
                       href="#"
-                      className={`nav-link ${openDeps ? "active" : ""}`}
                       onClick={(e) => {
                         e.preventDefault();
                         setOpenDeps((v) => !v);
                       }}
-                      aria-expanded={openDeps}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: openDeps ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: openDeps ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: openDeps ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: openDeps ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!openDeps) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!openDeps) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-project-diagram" />
-                      <p>
-                        Departman Yönetimi
-                        <i className="right fas fa-angle-left" />
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                        <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>🏢</span>
+                        <span>Departman Yönetimi</span>
+                      </div>
+                      <span style={{ fontSize: "12px", transition: "transform 0.2s", transform: openDeps ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                        ▶
+                      </span>
                     </a>
                     <ul
-                      className="nav nav-treeview"
-                      style={{ display: openDeps ? "block" : "none" }}
+                      style={{
+                        listStyle: "none",
+                        margin: "4px 0 0 0",
+                        padding: "0 0 0 8px",
+                        display: openDeps ? "block" : "none",
+                        borderLeft: "2px solid rgba(255, 255, 255, 0.1)",
+                        marginLeft: "24px",
+                      }}
                     >
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/departments"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/departments" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/departments" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/departments" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/departments") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/departments") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Departmanlar</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Departmanlar</span>
                         </NavLink>
                       </li>
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/departments/branches"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/departments/branches" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/departments/branches" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/departments/branches" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/departments/branches") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/departments/branches") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Şube Yönetimi</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Şube Yönetimi</span>
                         </NavLink>
                       </li>
                     </ul>
                   </li>
 
-                  <li
-                    className={`nav-item has-treeview ${
-                      openUsers ? "menu-open" : ""
-                    }`}
-                  >
+                  <li>
                     <a
                       href="#"
-                      className={`nav-link ${openUsers ? "active" : ""}`}
                       onClick={(e) => {
                         e.preventDefault();
                         setOpenUsers((v) => !v);
                       }}
-                      aria-expanded={openUsers}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: openUsers ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: openUsers ? "rgba(59, 130, 246, 0.2)" : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: openUsers ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: openUsers ? "3px solid #3b82f6" : "3px solid transparent",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!openUsers) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!openUsers) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-users" />
-                      <p>
-                        Kullanıcı Yönetimi
-                        <i className="right fas fa-angle-left" />
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                        <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>👥</span>
+                        <span>Kullanıcı Yönetimi</span>
+                      </div>
+                      <span style={{ fontSize: "12px", transition: "transform 0.2s", transform: openUsers ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                        ▶
+                      </span>
                     </a>
                     <ul
-                      className="nav nav-treeview"
-                      style={{ display: openUsers ? "block" : "none" }}
+                      style={{
+                        listStyle: "none",
+                        margin: "4px 0 0 0",
+                        padding: "0 0 0 8px",
+                        display: openUsers ? "block" : "none",
+                        borderLeft: "2px solid rgba(255, 255, 255, 0.1)",
+                        marginLeft: "24px",
+                      }}
                     >
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/roles/user-operations"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/roles/user-operations" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/roles/user-operations" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/roles/user-operations" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/roles/user-operations") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/roles/user-operations") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Kullanıcı İşlemleri</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Kullanıcı İşlemleri</span>
                         </NavLink>
                       </li>
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/roles"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/roles" && !pathname.includes("/admin/roles/") ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/roles" && !pathname.includes("/admin/roles/") ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/roles" && !pathname.includes("/admin/roles/") ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/roles" || pathname.includes("/admin/roles/")) {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/roles" || pathname.includes("/admin/roles/")) {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Rol Atama</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Rol Atama</span>
                         </NavLink>
                       </li>
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/roles/assign-provider"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/roles/assign-provider" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/roles/assign-provider" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/roles/assign-provider" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/roles/assign-provider") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/roles/assign-provider") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>İlgiliyi Şubeye Atama</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>İlgiliyi Şubeye Atama</span>
                         </NavLink>
                       </li>
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/admin/roles/assign-operator"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/admin/roles/assign-operator" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/admin/roles/assign-operator" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/admin/roles/assign-operator" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/admin/roles/assign-operator") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/admin/roles/assign-operator") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p style={{ fontSize: "0.96rem" }}>
-                            Operatörü Şubeye Atama
-                          </p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Operatörü Şubeye Atama</span>
                         </NavLink>
                       </li>
                     </ul>
@@ -501,69 +862,175 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
               {isOperator && (
                 <>
-                  <li className="nav-header">Operatör</li>
+                  <li style={{ padding: "8px 16px", marginTop: "8px" }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "rgba(255, 255, 255, 0.5)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Operatör
+                    </div>
+                  </li>
 
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/operator/dashboard"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${
-                          isActive || operatorRootActive ? " active" : ""
-                        }`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: (pathname === "/operator/dashboard" || operatorRootActive) ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: (pathname === "/operator/dashboard" || operatorRootActive) ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: (pathname === "/operator/dashboard" || operatorRootActive) ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: (pathname === "/operator/dashboard" || operatorRootActive) ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/operator/dashboard" && !operatorRootActive) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/operator/dashboard" && !operatorRootActive) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-tachometer-alt" />
-                      <p>Operatör Özeti</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📊</span>
+                      <span>Operatör Özeti</span>
                     </NavLink>
                   </li>
 
-                  <li
-                    className={`nav-item has-treeview ${
-                      openOperatorAppt ? "menu-open" : ""
-                    }`}
-                  >
+                  <li>
                     <a
                       href="#"
-                      className={`nav-link ${openOperatorAppt ? "active" : ""}`}
                       onClick={(e) => {
                         e.preventDefault();
                         setOpenOperatorAppt((v) => !v);
                       }}
-                      aria-expanded={openOperatorAppt}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: openOperatorAppt ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: openOperatorAppt ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: openOperatorAppt ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: openOperatorAppt ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!openOperatorAppt) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!openOperatorAppt) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-calendar-check" />
-                      <p>
-                        Randevu Yönetimi
-                        <i className="right fas fa-angle-left" />
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                        <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📋</span>
+                        <span>Randevu Yönetimi</span>
+                      </div>
+                      <span style={{ fontSize: "12px", transition: "transform 0.2s", transform: openOperatorAppt ? "rotate(-90deg)" : "rotate(0deg)" }}>
+                        ▶
+                      </span>
                     </a>
                     <ul
-                      className="nav nav-treeview"
-                      style={{ display: openOperatorAppt ? "block" : "none" }}
+                      style={{
+                        listStyle: "none",
+                        margin: "4px 0 0 0",
+                        padding: "0 0 0 8px",
+                        display: openOperatorAppt ? "block" : "none",
+                        borderLeft: "2px solid rgba(255, 255, 255, 0.1)",
+                        marginLeft: "24px",
+                      }}
                     >
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/operator/appointments"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/operator/appointments" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/operator/appointments" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/operator/appointments" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/operator/appointments") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/operator/appointments") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Randevu İşlemleri</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Randevu İşlemleri</span>
                         </NavLink>
                       </li>
-                      <li className="nav-item">
+                      <li>
                         <NavLink
                           to="/operator/walk-in"
                           end
-                          className={({ isActive }) =>
-                            `nav-link${isActive ? " active" : ""}`
-                          }
+                          className={() => ""}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "10px 16px",
+                            margin: "2px 0",
+                            borderRadius: "6px",
+                            color: pathname === "/operator/walk-in" ? "#fff" : "rgba(255, 255, 255, 0.6)",
+                            background: pathname === "/operator/walk-in" ? `${colors.primary[500]}26` : "transparent",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: pathname === "/operator/walk-in" ? 600 : 500,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pathname !== "/operator/walk-in") {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pathname !== "/operator/walk-in") {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
                         >
-                          <i className="far fa-circle nav-icon" />
-                          <p>Randevusuz Kabul</p>
+                          <span style={{ fontSize: "12px", width: "16px", textAlign: "center" }}>•</span>
+                          <span>Randevusuz Kabul</span>
                         </NavLink>
                       </li>
                     </ul>
@@ -573,43 +1040,122 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
               {isProvider && (
                 <>
-                  <li className="nav-header">İlgili</li>
-                  <li className="nav-item">
+                  <li style={{ padding: "8px 16px", marginTop: "8px" }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "rgba(255, 255, 255, 0.5)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      İlgili
+                    </div>
+                  </li>
+                  <li>
                     <NavLink
                       to="/provider/appointments"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${
-                          isActive || providerRootActive ? " active" : ""
-                        }`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: (pathname === "/provider/appointments" || providerRootActive) ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: (pathname === "/provider/appointments" || providerRootActive) ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: (pathname === "/provider/appointments" || providerRootActive) ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: (pathname === "/provider/appointments" || providerRootActive) ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/provider/appointments" && !providerRootActive) {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/provider/appointments" && !providerRootActive) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-calendar-day" />
-                      <p>Randevular</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📅</span>
+                      <span>Randevular</span>
                     </NavLink>
                   </li>
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/provider/sessions"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: pathname === "/provider/sessions" ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: pathname === "/provider/sessions" ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: pathname === "/provider/sessions" ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: pathname === "/provider/sessions" ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/provider/sessions") {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/provider/sessions") {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-clipboard-list" />
-                      <p>Görüşmeler</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>📄</span>
+                      <span>Görüşmeler</span>
                     </NavLink>
                   </li>
-                  <li className="nav-item">
+                  <li>
                     <NavLink
                       to="/provider/waiting"
                       end
-                      className={({ isActive }) =>
-                        `nav-link${isActive ? " active" : ""}`
-                      }
+                      className={() => ""}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        margin: "0 8px",
+                        borderRadius: "8px",
+                        color: pathname === "/provider/waiting" ? "#fff" : "rgba(255, 255, 255, 0.7)",
+                        background: pathname === "/provider/waiting" ? `${colors.primary[500]}33` : "transparent",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: pathname === "/provider/waiting" ? 600 : 500,
+                        transition: "all 0.2s",
+                        borderLeft: pathname === "/provider/waiting" ? `3px solid ${colors.primary[500]}` : "3px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (pathname !== "/provider/waiting") {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (pathname !== "/provider/waiting") {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
-                      <i className="nav-icon fas fa-users" />
-                      <p>Bekleyen Ziyaretçiler</p>
+                      <span style={{ fontSize: "18px", width: "20px", textAlign: "center" }}>👥</span>
+                      <span>Bekleyen Ziyaretçiler</span>
                     </NavLink>
                   </li>
                 </>
@@ -619,21 +1165,28 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
       </aside>
 
-      <div className="content-wrapper">
+      <div 
+        style={{
+          marginLeft: isMobile ? 0 : "260px",
+          marginTop: "60px",
+          minHeight: "calc(100vh - 60px)",
+          transition: "margin-left 0.3s ease-in-out",
+          padding: "20px",
+          boxSizing: "border-box",
+        }}
+      >
         {sidebarOpen && isMobile && (
           <div
             style={{
-              position: "fixed",
+              position: 'fixed',
               inset: 0,
-              background: "rgba(0, 0, 0, 0.5)",
-              zIndex: 1029,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000,
             }}
             onClick={() => setSidebarOpen(false)}
           />
         )}
-        <section className="content pt-3">
-          <div className="container-fluid">{children}</div>
-        </section>
+        {children}
       </div>
     </div>
   );

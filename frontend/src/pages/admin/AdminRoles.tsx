@@ -244,6 +244,7 @@ export default function Roles() {
     (d.branches || []).map((b) => ({ ...b, depName: d.name }))
   );
 
+  // Filtered lists
   const filteredUsersForRole = users.filter((u) => {
     if (userSearchQuery.trim()) {
       const query = userSearchQuery.toLowerCase();
@@ -358,7 +359,7 @@ export default function Roles() {
                       borderRadius: "8px",
                       maxHeight: "200px",
                       overflowY: "auto",
-                      background: "white",
+                      background: colors.gray[50],
                     }}
                   >
                     {filteredUsersForRole.length === 0 ? (
@@ -377,7 +378,7 @@ export default function Roles() {
                             padding: "12px 16px",
                             cursor: "pointer",
                             borderBottom: `1px solid ${colors.gray[100]}`,
-                            background: selectedUser === u.id ? colors.primary[50] : "white",
+                            background: selectedUser === u.id ? colors.primary[50] : colors.gray[50],
                             transition: "background 0.2s",
                           }}
                           onMouseEnter={(e) => {
@@ -387,7 +388,7 @@ export default function Roles() {
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background =
-                              selectedUser === u.id ? colors.primary[50] : "white";
+                              selectedUser === u.id ? colors.primary[50] : colors.gray[50];
                           }}
                         >
                           <div style={{ fontWeight: 600, color: colors.gray[900], fontSize: "14px" }}>
@@ -567,7 +568,7 @@ export default function Roles() {
                       borderRadius: "8px",
                       maxHeight: "200px",
                       overflowY: "auto",
-                      background: "white",
+                      background: colors.gray[50],
                     }}
                   >
                     {filteredProviderUsers.length === 0 ? (
@@ -586,7 +587,7 @@ export default function Roles() {
                             padding: "12px 16px",
                             cursor: "pointer",
                             borderBottom: `1px solid ${colors.gray[100]}`,
-                            background: selectedUser === u.id ? colors.primary[50] : "white",
+                            background: selectedUser === u.id ? colors.primary[50] : colors.gray[50],
                             transition: "background 0.2s",
                           }}
                           onMouseEnter={(e) => {
@@ -596,7 +597,7 @@ export default function Roles() {
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background =
-                              selectedUser === u.id ? colors.primary[50] : "white";
+                              selectedUser === u.id ? colors.primary[50] : colors.gray[50];
                           }}
                         >
                           <div style={{ fontWeight: 600, color: colors.gray[900], fontSize: "14px" }}>
@@ -639,7 +640,7 @@ export default function Roles() {
                       borderRadius: "8px",
                       maxHeight: "200px",
                       overflowY: "auto",
-                      background: "white",
+                      background: colors.gray[50],
                     }}
                   >
                     {filteredBranches.length === 0 ? (
@@ -658,7 +659,7 @@ export default function Roles() {
                             padding: "12px 16px",
                             cursor: "pointer",
                             borderBottom: `1px solid ${colors.gray[100]}`,
-                            background: selectedBranch === b.id ? colors.primary[50] : "white",
+                            background: selectedBranch === b.id ? colors.primary[50] : colors.gray[50],
                             transition: "background 0.2s",
                           }}
                           onMouseEnter={(e) => {
@@ -886,7 +887,7 @@ export default function Roles() {
                       borderRadius: "8px",
                       maxHeight: "200px",
                       overflowY: "auto",
-                      background: "white",
+                      background: colors.gray[50],
                     }}
                   >
                     {filteredOperatorUsers.length === 0 ? (
@@ -905,7 +906,7 @@ export default function Roles() {
                             padding: "12px 16px",
                             cursor: "pointer",
                             borderBottom: `1px solid ${colors.gray[100]}`,
-                            background: selectedOperatorUser === u.id ? colors.primary[50] : "white",
+                            background: selectedOperatorUser === u.id ? colors.primary[50] : colors.gray[50],
                             transition: "background 0.2s",
                           }}
                           onMouseEnter={(e) => {
@@ -958,7 +959,7 @@ export default function Roles() {
                       borderRadius: "8px",
                       maxHeight: "200px",
                       overflowY: "auto",
-                      background: "white",
+                      background: colors.gray[50],
                     }}
                   >
                     {filteredOperatorBranches.length === 0 ? (
@@ -977,7 +978,7 @@ export default function Roles() {
                             padding: "12px 16px",
                             cursor: "pointer",
                             borderBottom: `1px solid ${colors.gray[100]}`,
-                            background: selectedOperatorBranch === b.id ? colors.primary[50] : "white",
+                            background: selectedOperatorBranch === b.id ? colors.primary[50] : colors.gray[50],
                             transition: "background 0.2s",
                           }}
                           onMouseEnter={(e) => {
@@ -1279,7 +1280,7 @@ export default function Roles() {
                         e.currentTarget.style.background = colors.gray[50];
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "white";
+                        e.currentTarget.style.background = colors.gray[50];
                       }}
                     >
                       <div style={{ flex: 1, minWidth: "200px" }}>
