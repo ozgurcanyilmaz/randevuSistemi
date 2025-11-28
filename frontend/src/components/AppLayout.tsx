@@ -531,7 +531,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                           }
                         >
                           <i className="far fa-circle nav-icon" />
-                          <p>Walk-in Randevu</p>
+                          <p>Randevusuz Kabul</p>
                         </NavLink>
                       </li>
                     </ul>

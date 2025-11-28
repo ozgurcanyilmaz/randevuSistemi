@@ -147,7 +147,7 @@ export default function OperatorWalkIn() {
   return (
     <PageContainer>
       <PageHeader
-        title="Walk-in Randevu"
+        title="Randevusuz Kabul"
         subtitle="Randevusuz gelen kullanıcılar için hızlı randevu oluşturun. Kullanıcı otomatik olarak bekleyen listesine eklenecektir."
       />
 
