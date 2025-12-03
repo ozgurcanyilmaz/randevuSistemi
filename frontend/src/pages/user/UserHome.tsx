@@ -45,7 +45,17 @@ export default function UserHome() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [booking, setBooking] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     loadDepartments();
@@ -287,11 +297,26 @@ export default function UserHome() {
 
         {slots.length > 0 && (
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-              gap: "12px",
-            }}
+            style={
+              isMobile
+                ? {
+                    display: "flex",
+                    flexWrap: "nowrap",
+                    gap: "12px",
+                    overflowX: "auto",
+                    overflowY: "hidden",
+                    paddingBottom: "8px",
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-x",
+                    overscrollBehaviorX: "contain",
+                    overscrollBehaviorY: "none",
+                  }
+                : {
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                    gap: "12px",
+                  }
+            }
           >
             {slots.map((s, i) => (
               <button
@@ -315,6 +340,7 @@ export default function UserHome() {
                   alignItems: "center",
                   gap: 4,
                   wordBreak: "break-word",
+                  ...(isMobile && { flexShrink: 0, minWidth: "120px" }),
                 }}
                 {...getButtonHoverHandlers("secondary")}
                 onMouseEnter={(e) => {

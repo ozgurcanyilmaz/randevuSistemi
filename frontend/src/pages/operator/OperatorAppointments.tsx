@@ -622,25 +622,59 @@ export default function OperatorHome() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
                     gap: "12px",
                   }}
                 >
                   {slots.map((s, i) => (
-                    <Button
+                    <button
                       key={i}
-                      variant="secondary"
                       onClick={() => createAppointment(s.start, s.end)}
                       disabled={!providerId || !slotDate || !selectedUserId}
                       style={{
-                        fontSize: "clamp(11px, 1.5vw, 14px)",
-                        padding: "12px 16px",
+                        padding: "14px 12px",
                         border: `2px solid ${colors.primary[200]}`,
+                        background: "white",
                         color: colors.primary[800],
+                        borderRadius: "8px",
+                        cursor: !providerId || !slotDate || !selectedUserId ? "not-allowed" : "pointer",
+                        fontWeight: 600,
+                        fontSize: "clamp(12px, 2vw, 14px)",
+                        transition: "all 0.2s",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "4px",
+                        wordBreak: "break-word",
+                        opacity: !providerId || !slotDate || !selectedUserId ? 0.5 : 1,
+                        minHeight: "70px",
+                        justifyContent: "center",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (providerId && slotDate && selectedUserId) {
+                          e.currentTarget.style.background = colors.primary[50];
+                          e.currentTarget.style.borderColor = colors.primary[400];
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow = `0 4px 12px ${colors.primary[200]}`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "white";
+                        e.currentTarget.style.borderColor = colors.primary[200];
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
                       }}
                     >
-                      {s.start} - {s.end}
-                    </Button>
+                      <span style={{ fontSize: "clamp(14px, 2.5vw, 16px)", fontWeight: 700, color: colors.primary[700] }}>
+                        {s.start}
+                      </span>
+                      <span style={{ fontSize: "clamp(10px, 1.5vw, 11px)", color: colors.gray[400] }}>
+                        ─
+                      </span>
+                      <span style={{ fontSize: "clamp(13px, 2.2vw, 15px)", fontWeight: 600, color: colors.primary[600] }}>
+                        {s.end}
+                      </span>
+                    </button>
                   ))}
                 </div>
               )}

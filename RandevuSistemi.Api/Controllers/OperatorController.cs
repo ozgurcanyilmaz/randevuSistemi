@@ -119,6 +119,34 @@ namespace RandevuSistemi.Api.Controllers
                 .OrderBy(x => x.Hour)
                 .ToList();
 
+            var monthlyStats = new List<object>();
+            for (int i = 5; i >= 0; i--)
+            {
+                var monthDate = today.AddMonths(-i);
+                var monthStart = new DateOnly(monthDate.Year, monthDate.Month, 1);
+                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                var pastMonthAppointments = await _db.Appointments
+                    .Include(a => a.ServiceProvider)
+                    .Where(a => a.Date >= monthStart && a.Date <= monthEnd && a.ServiceProvider.BranchId == branchId)
+                    .ToListAsync();
+
+                var monthCheckedInCount = pastMonthAppointments.Count(a => a.CheckedInAt != null);
+                var monthTotalCount = pastMonthAppointments.Count;
+
+                monthlyStats.Add(new
+                {
+                    Month = monthDate.ToString("yyyy-MM"),
+                    MonthName = monthDate.ToString("MMMM yyyy", new System.Globalization.CultureInfo("tr-TR")),
+                    Total = monthTotalCount,
+                    CheckedIn = monthCheckedInCount,
+                    Pending = monthTotalCount - monthCheckedInCount,
+                    CheckInRate = monthTotalCount > 0
+                        ? Math.Round((double)monthCheckedInCount / monthTotalCount * 100, 1)
+                        : 0
+                });
+            }
+
             return Ok(new
             {
                 Today = new
@@ -148,7 +176,8 @@ namespace RandevuSistemi.Api.Controllers
                 },
                 ProviderStats = providerStats,
                 RecentCheckIns = recentCheckIns,
-                HourlyStats = hourlyStats
+                HourlyStats = hourlyStats,
+                MonthlyStats = monthlyStats
             });
         }
 

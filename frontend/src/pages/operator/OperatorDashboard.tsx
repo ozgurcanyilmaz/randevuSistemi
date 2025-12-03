@@ -23,6 +23,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 
 type DashboardData = {
@@ -63,6 +65,14 @@ type DashboardData = {
     hour: number;
     count: number;
     checkedIn: number;
+  }>;
+  monthlyStats: Array<{
+    month: string;
+    monthName: string;
+    total: number;
+    checkedIn: number;
+    pending: number;
+    checkInRate: number;
   }>;
 };
 
@@ -391,6 +401,146 @@ export default function OperatorDashboard() {
               </div>
             )}
           </>
+        )}
+      </Card>
+
+      <Card style={{ marginTop: "24px" }}>
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: `1px solid ${colors.gray[100]}`,
+            background: colors.gray[50],
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <h2 style={commonStyles.cardSubheader}>📈 Geçmiş 6 Ay Randevular</h2>
+          <span style={commonStyles.badge.primary}>
+            {data.monthlyStats.reduce((sum: number, m: any) => sum + m.total, 0)} toplam randevu
+          </span>
+        </div>
+
+        {data.monthlyStats.length === 0 ? (
+          <EmptyState message="Geçmiş aylara ait veri bulunmuyor." />
+        ) : (
+          <div style={{ padding: "20px" }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={data.monthlyStats.map((m: any) => ({
+                  ...m,
+                  name: m.monthName.split(" ")[0],
+                  fullName: m.monthName,
+                }))}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.gray[200]} />
+                <XAxis
+                  dataKey="name"
+                  stroke={colors.gray[500]}
+                  style={{ fontSize: 12 }}
+                  tick={{ fill: colors.gray[600] }}
+                />
+                <YAxis
+                  stroke={colors.gray[500]}
+                  style={{ fontSize: 12 }}
+                  tick={{ fill: colors.gray[600] }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div
+                          style={{
+                            background: "white",
+                            border: `1px solid ${colors.gray[200]}`,
+                            borderRadius: 8,
+                            padding: 12,
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              color: colors.gray[800],
+                              marginBottom: 8,
+                            }}
+                          >
+                            {data.fullName}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: colors.primary[600],
+                              marginBottom: 4,
+                            }}
+                          >
+                            📊 Toplam: {data.total}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: colors.success[600],
+                              marginBottom: 4,
+                            }}
+                          >
+                            ✓ Check-in: {data.checkedIn}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: colors.warning[600],
+                              marginBottom: 4,
+                            }}
+                          >
+                            ⏳ Bekleyen: {data.pending}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: colors.gray[500],
+                              marginTop: 4,
+                              paddingTop: 4,
+                              borderTop: `1px solid ${colors.gray[200]}`,
+                            }}
+                          >
+                            Check-in Oranı: {data.checkInRate}%
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: "8px" }}
+                  iconType="line"
+                  iconSize={12}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke={colors.primary[600]}
+                  strokeWidth={3}
+                  dot={{ fill: colors.primary[600], r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Toplam Randevu"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="checkedIn"
+                  stroke={colors.success[600]}
+                  strokeWidth={3}
+                  dot={{ fill: colors.success[600], r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Check-in Yapılan"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </Card>
 
